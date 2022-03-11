@@ -2,6 +2,7 @@ from decimal import *
 from sympy import Rational
 from math import pow
 
+
 class Sexagesimal:
 
     def __init__(self, S):
@@ -15,25 +16,25 @@ class Sexagesimal:
             S = S[1:].strip()
         else:
             self.negative = False
-        
+
         if ";" not in S:
-            S = (self.Decimal2Sexagesimal(S, 20+len(S))).S
+            S = (self.Decimal2Sexagesimal(S, 20 + len(S))).S
 
         S_D, S_F = S.split(";")
 
         D, F = [], []
         for d in S_D.split(","):
             D.append(f'{d:0>2}')
-        
+
         for f in S_F.split(","):
             F.append(f'{f:0>2}')
-        
+
         N = int(D.pop(0))
         while N > 59:
             R = N % 60
-            N = N //  60
+            N = N // 60
             D = [f"{R:0>2}"] + D
-        
+
         D = [f"{N:0>2}"] + D
 
         Inputs = D + F
@@ -42,19 +43,19 @@ class Sexagesimal:
                 raise Exception("Fractional Part has 60+ entry")
 
         D, F = ",".join([d.strip() for d in D]), ",".join([f.strip() for f in F])
-        
+
         S = f"{D};{F}"
 
         self.S = S
-    
+
     def __repr__(self):
         S = self.S
-        
+
         if self.negative:
             S = "-" + S
-        
+
         return S
-    
+
     def __add__(self, B):
 
         # Get the terms
@@ -87,7 +88,7 @@ class Sexagesimal:
                     carry = 1
                 else:
                     carry = 0
-                
+
                 F = [f"{Sum:0>2}"] + F
 
             # Add the integral part
@@ -102,22 +103,22 @@ class Sexagesimal:
                     carry = 1
                 else:
                     carry = 0
-                
+
                 D = [f"{Sum:0>2}"] + D
-            
-            #print(carry)
-            
+
+            # print(carry)
+
             D = ",".join(D)
             F = ",".join(F)
 
-            return Sexagesimal("-" + ";".join([D, F]))      
-        
-        elif A.negative == True and B.negative == False:
+            return Sexagesimal("-" + ";".join([D, F]))
+
+        elif A.negative is True and B.negative is False:
             A = Sexagesimal(A.S)
             A.negative = False
             return B - A
 
-        elif A.negative == False and B.negative == True:
+        elif A.negative is False and B.negative is True:
             B = Sexagesimal(B.S)
             B.negative = False
             return A - B
@@ -179,8 +180,8 @@ class Sexagesimal:
         B_D = self.input2List(B_D)
         B_F = self.input2List(B_F)
 
-        if A.negative == False and B.negative == False:
-            
+        if A.negative is False and B.negative is False:
+
             if len(A_D) > len(B_D) or A > B:
 
                 F = []
@@ -195,9 +196,9 @@ class Sexagesimal:
                             A_F[-1] -= 1
                         except:
                             A_D[-1] -= 1
-                        
+
                         a += 60
-                    
+
                     Diff = a - b + carry
 
                     if Diff >= 60:
@@ -205,7 +206,7 @@ class Sexagesimal:
                         carry = 1
                     else:
                         carry = 0
-                    
+
                     F = [f"{Diff:0>2}"] + F
 
                 # Add the integral part
@@ -217,7 +218,6 @@ class Sexagesimal:
                     if a < b:
                         A_D[-1] -= 1
                         a += 60
-                    
 
                     Diff = a - b + carry
 
@@ -226,16 +226,16 @@ class Sexagesimal:
                         carry = 1
                     else:
                         carry = 0
-                    
+
                     D = [f"{Diff:0>2}"] + D
-                
+
                 D = ",".join(D)
                 F = ",".join(F)
 
-                return Sexagesimal(";".join([D, F]))    
-            
+                return Sexagesimal(";".join([D, F]))
+
             else:
-                
+
                 F = []
                 carry = 0
                 while len(A_F) > 0:
@@ -248,9 +248,9 @@ class Sexagesimal:
                             B_F[-1] -= 1
                         except:
                             B_D[-1] -= 1
-                        
+
                         b += 60
-                    
+
                     Diff = b - a + carry
 
                     if Diff >= 60:
@@ -258,19 +258,18 @@ class Sexagesimal:
                         carry = 1
                     else:
                         carry = 0
-                    
+
                     F = [f"{Diff:0>2}"] + F
 
                 # Add the integral part
                 D = []
                 while len(A_D) > 0:
                     a, b = A_D.pop(), B_D.pop()
-                
+
                     if b < a:
-                        
+
                         B_D[-1] -= 1
                         b += 60
-                    
 
                     Diff = b - a + carry
 
@@ -279,20 +278,20 @@ class Sexagesimal:
                         carry = 1
                     else:
                         carry = 0
-                    
+
                     D = [f"{Diff:0>2}"] + D
-                
+
                 D = ",".join(D)
                 F = ",".join(F)
 
-                return Sexagesimal("-" + ";".join([D, F]))    
+                return Sexagesimal("-" + ";".join([D, F]))
 
-        elif A.negative == True and B.negative == False:
+        elif A.negative is True and B.negative is False:
 
             B = Sexagesimal(f"-{B.S}")
             return A + B
-        
-        elif B.negative == True and A.negative == False:
+
+        elif B.negative is True and A.negative is False:
 
             B = Sexagesimal(f"-{B.S}")
             return A + B
@@ -312,7 +311,7 @@ class Sexagesimal:
         # # Break into integral and fractional part
         # A_D, A_F = A_S.split(";")
         # B_D, B_F = B_S.split(";")
-        
+
         # # Make lists for integral and fractional part
         # A_D = A_D.split(",")
         # A_F = A_F.split(",")
@@ -330,29 +329,29 @@ class Sexagesimal:
         #         Multiplication.append([])
         #     else:
         #         Multiplication.append(i * [0])
-            
+
         #     for A_f in A_F[::-1]:
         #         A_f = int(A_f)
         #         prod = f * A_f + carry
-                
+
         #         if prod > 59:
         #             carry = prod // 60
         #             prod %= 60
         #         else:
         #             carry = 0
-                
+
         #         Multiplication[i] = [prod] + Multiplication[i]
 
         #     for A_d in A_D[::-1]:
         #         A_d = int(A_d)
         #         prod = f * A_d + carry
-                
+
         #         if prod > 59:
         #             carry = prod // 60
         #             prod %= 60
         #         else:
         #             carry = 0
-                
+
         #         Multiplication[i] = [prod] + Multiplication[i]
 
         #     if carry > 0:
@@ -361,7 +360,7 @@ class Sexagesimal:
         #             carry = carry //  60
         #             Multiplication[i] = [R] + Multiplication[i]
         #         Multiplication[i] = [carry] + Multiplication[i]
-        
+
         # # Multiply the intger part
         # for d in B_D[::-1]:
         #     d = int(d)
@@ -372,29 +371,29 @@ class Sexagesimal:
         #         Multiplication.append([])
         #     else:
         #         Multiplication.append(i * [0])
-            
+
         #     for A_f in A_F[::-1]:
         #         A_f = int(A_f)
         #         prod = d * A_f + carry
-                
+
         #         if prod > 59:
         #             carry = prod // 60
         #             prod %= 60
         #         else:
         #             carry = 0
-                
+
         #         Multiplication[i] = [prod] + Multiplication[i]
 
         #     for A_d in A_D[::-1]:
         #         A_d = int(A_d)
         #         prod = d * A_d + carry
-                
+
         #         if prod > 59:
         #             carry = prod // 60
         #             prod %= 60
         #         else:
         #             carry = 0
-                
+
         #         Multiplication[i] = [prod] + Multiplication[i]
 
         #     if carry > 0:
@@ -403,7 +402,7 @@ class Sexagesimal:
         #             carry = carry //  60
         #             Multiplication[i] = [R] + Multiplication[i]
         #         Multiplication[i] = [carry] + Multiplication[i]
-        
+
         # # Make all rows of same length
         # max_lenght = max([len(x) for x in Multiplication])
         # for i in range(len(Multiplication)):
@@ -411,7 +410,6 @@ class Sexagesimal:
         #     m = max_lenght - len(Multiplication[i])
 
         #     Multiplication[i] = m*[0] + Multiplication[i]
-        
 
         # Result = []
         # carry = 0
@@ -427,7 +425,7 @@ class Sexagesimal:
         #         Sum %= 60
         #     else:
         #         carry = 0
-            
+
         #     Result = [f"{Sum:0>2}"] + Result
 
         # #print(Result, carry)
@@ -439,16 +437,15 @@ class Sexagesimal:
         #     Result = [f"{carry:0>2}"] + Result
 
         # k = len(A_F) + len(B_F)
-        
+
         # D, F = Result[:-k], Result[-k:]
         # #print(D, F, k)
         # D = ",".join(D)
         # F = ",".join(F)
 
-
         # while F[-3:] == ",00":
         #     F = F[:-3]
-        
+
         # while D[:3] == "00,":
         #     D = D[3:]
 
@@ -499,14 +496,14 @@ class Sexagesimal:
             return Sexagesimal(self.S)
         else:
             return Sexagesimal(f"-{self.S}")
-    
+
     def __pos__(self):
 
         if self.negative:
             return Sexagesimal(f"-{self.S}")
         else:
             return Sexagesimal(self.S)
-        
+
     def __pow__(self, n):
 
         A = self
@@ -588,7 +585,6 @@ class Sexagesimal:
                 return False
         
         return True
-    
 
     # Helping Functions
     def input2List(self, Input):
@@ -641,7 +637,6 @@ class Sexagesimal:
         
         return f"{Dec};{A_F}"
 
-
     @staticmethod
     def RoundOff(Number, precision):
         #print(precision)
@@ -693,7 +688,7 @@ class Sexagesimal:
             return Sexagesimal.RoundOff(Number, precision-1)
         else:
             return Number
-        
+
     @staticmethod
     def getReciprocal(N, precision=99):
         
@@ -754,7 +749,7 @@ class Sexagesimal:
             return(f"{Sexa[0]};{','.join(Sexa[1:])}", Recur, flag)
         else:
             return (Sexagesimal(f"{Sexa[0]};{','.join(Sexa[1:])}"), Recur, flag)
-    
+
     @staticmethod
     def getRationlForm(Number):
 
@@ -1248,7 +1243,6 @@ class Sexagesimal:
             return (Div, Details)
         else:
             return Div
-
 
     @staticmethod
     def IncrementTableGenerator(Inc_Initial, Inc_Increment, Inc_Rows=10, Inc_Mod=60):
