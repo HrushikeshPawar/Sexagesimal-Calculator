@@ -2,3 +2,4 @@
 *.txt
 .vscode
 UnitTesting
+sexagesimal_calculator/test_pytest.py
