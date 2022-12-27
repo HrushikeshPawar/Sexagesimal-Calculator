@@ -6,11 +6,9 @@ This was developed for the summer project for the  [HoMI](https://sites.iitgn.ac
 
 ## Installation
 
-You can install the Real Python Feed Reader from [PyPI](https://pypi.org/project/sexagesimal-calculator/):
+You can install the Sexagesimal Calculator from [PyPI](https://pypi.org/project/sexagesimal-calculator/):
 
     python -m pip install sexagesimal-calculator
-
-The reader is supported on Python 3.7 and above.
 
 ## How to use
      
