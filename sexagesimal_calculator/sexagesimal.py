@@ -2,6 +2,7 @@
 from decimal import Decimal
 from sympy import Rational
 from math import pow
+from copy import copy
 from typing import Union, List, Tuple
 
 
@@ -46,8 +47,9 @@ class Sexagesimal:
     # The Addition of two Sexagesimal Numbers
     def __add__(self, B: 'Sexagesimal') -> 'Sexagesimal':
 
-        # Get the terms
-        A = self
+        # Get the terms (Don't want to accidentally change the original numbers)
+        A = copy(self)
+        B = copy(B)
 
         # Make them equal lengths, i.e in terms of Degrees and Fractional part
         A1, B1 = self.makeEqualLen(A, B)
@@ -139,8 +141,9 @@ class Sexagesimal:
     # The Subtraction of two Sexagesimal Numbers
     def __sub__(self, B: 'Sexagesimal') -> 'Sexagesimal':
 
-        # Get the terms
-        A = self
+        # Get the terms (Don't want to accidentally change the original numbers)
+        A = copy(self)
+        B = copy(B)
 
         # Make them equal lengths
         A1, B1 = self.makeEqualLen(A, B)
@@ -183,6 +186,178 @@ class Sexagesimal:
         Ans = Sexagesimal(f"{A.S}") + Sexagesimal(f"{B.S}")
         Ans.negative = True
         return Ans
+
+    # The Multiplication of two Sexagesimal Numbers
+    def __mul__(self, B: 'Sexagesimal') -> 'Sexagesimal':
+
+        # Use the Multiplication Algorithm with default parameters
+        return self.Multiplication(self, B)
+
+    # The Division of two Sexagesimal Numbers
+    def __truediv__(self, B: 'Sexagesimal') -> 'Sexagesimal':
+
+        # Use the Division Algorithm with default parameters
+        return self.Division(self, B)
+
+    # Negation (For Unary Minus)
+    def __neg__(self) -> 'Sexagesimal':
+
+        # Don't accidentally change the original number
+        A = copy(self)
+        A.negative = not A.negative
+
+        return A
+
+    # For Unary Plus
+    def __pos__(self) -> 'Sexagesimal':
+        # Again, don't return the original number
+        return copy(self)
+
+    # Absolute Value
+    def __abs__(self) -> 'Sexagesimal':
+
+        # Don't return the original number
+        A = copy(self)
+
+        # Set the negative flag to False
+        A.negative = False
+
+        return A
+
+    # The Power of a Sexagesimal Number
+    def __pow__(self, n: int) -> 'Sexagesimal':
+
+        # Don't return the original number
+        A = copy(self)
+
+        # If the power is negative, then we raise the reciprocal to the power
+        if n < 0:
+            A = 1 / A
+            n = -n
+
+        # Perform repeated multiplication
+        for _ in range(n - 1):
+            A *= A
+
+        return A
+
+    # Iterative Addition
+    def __iadd__(self, B: 'Sexagesimal') -> 'Sexagesimal':
+
+        # Use the Addition Algorithm
+        return self + B
+
+    # Iterative Subtraction
+    def __isub__(self, B: 'Sexagesimal') -> 'Sexagesimal':
+
+        # Use the Subtraction Algorithm
+        return self - B
+
+    # Iterative Multiplication
+    def __imul__(self, B: 'Sexagesimal') -> 'Sexagesimal':
+        # Use the Multiplication Algorithm
+        return self * B
+
+    # Greater Than
+    def __gt__(self, B: 'Sexagesimal') -> bool:
+
+        # Get the terms (Don't want to accidentally change the original numbers)
+        A = copy(self)
+        B = copy(B)
+
+        # If one of the numbers is negative and other is greater
+        if A.negative and not B.negative:
+            return False
+
+        if not A.negative and B.negative:
+            return True
+
+        if A.negative and B.negative:
+            return -A < -B  # <==> A > B
+
+        # Make them equal lengths
+        A, B = self.makeEqualLen(A, B)
+        A_D, A_F = A.S.split(";")
+        B_D, B_F = B.S.split(";")
+
+        for i in range(len(A_D)):
+            if A_D[i] > B_D[i]:
+                return True
+
+            if B_D[i] > A_D[i]:
+                return False
+
+        for i in range(len(A_F)):
+            if A_F[i] > B_F[i]:
+                return True
+
+            if B_F[i] > A_F[i]:
+                return False
+
+        # If equal then return False
+        return False
+
+    # Less Than
+    def __lt__(self, B: 'Sexagesimal') -> bool:
+
+        # Get the terms (Don't want to accidentally change the original numbers)
+        A = copy(self)
+        B = copy(B)
+
+        # If one of the numbers is negative and other is greater
+        if A.negative and not B.negative:
+            return True
+
+        if not A.negative and B.negative:
+            return False
+
+        if A.negative and B.negative:
+            return -A > -B  # <==> A < B
+
+        # Make them equal lengths
+        A, B = self.makeEqualLen(A, B)
+
+        A_D, A_F = A.S.split(";")
+        B_D, B_F = B.S.split(";")
+
+        for i in range(len(A_D)):
+            if A_D[i] < B_D[i]:
+                return True
+
+            if B_D[i] < A_D[i]:
+                return False
+
+        for i in range(len(A_F)):
+            if A_F[i] < B_F[i]:
+                return True
+
+            if B_F[i] < A_F[i]:
+                return False
+
+        # If equal then return False
+        return False
+
+    # Equal To
+    def __eq__(self, B: 'Sexagesimal') -> bool:
+
+        # return not (self < B or self > B)
+        return (self.negative == B.negative) and (self.S == B.S)
+
+    # Not Equal To
+    def __ne__(self, B: 'Sexagesimal') -> bool:
+        return not self == B
+
+    # Greater Than or Equal To
+    def __ge__(self, B: 'Sexagesimal') -> bool:
+        return self > B or self == B
+
+    # Less Than or Equal To
+    def __le__(self, B: 'Sexagesimal') -> bool:
+        return self < B or self == B
+
+    # Copy Function
+    def __copy__(self) -> 'Sexagesimal':
+        return Sexagesimal(self.S)
 
     # Perform Subtraction with borrow method
     def subtraction_with_borrow(self, greater_D, greater_F, lesser_D, lesser_F):
