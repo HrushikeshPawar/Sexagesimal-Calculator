@@ -1,143 +1,62 @@
-# Imports
-from decimal import Decimal
+from decimal import *
 from sympy import Rational
 from math import pow
-from typing import Union, List, Tuple
 
 
-# The Sexagesimal class
 class Sexagesimal:
 
-    # The constructor
-    def __init__(self, S: Union[str, int]):
+    def __init__(self, S):
 
-        # Get the input as String
         S = str(S).strip()
 
-        # Perform negative number check
-        S = self.process_negative(S)
+        self.S = S
 
-        # If number is decimal, convert to sexagesimal
-        S = self.check_and_convert_decimal(S)
+        if S[0] == "-":
+            self.negative = True
+            S = S[1:].strip()
+        else:
+            self.negative = False
 
-        # At this point, the input is in sexagesimal format, hence we
-        # Finally Check if the input is valid Sexagesimal
-        is_valid, error = self.is_valid_sexagesimal(S)
+        if ";" not in S:
+            S = (self.Decimal2Sexagesimal(S, 20 + len(S))).S
 
-        # If not valid, raise the error
-        if not is_valid:
-            raise error
+        S_D, S_F = S.split(";")
 
-        # If valid, Convert the String to Standard Sexagesimal Format
-        self.S = self.Standardize(S)
+        D, F = [], []
+        for d in S_D.split(","):
+            D.append(f'{d:0>2}')
 
-    # The String representation of the class
-    def __str__(self) -> str:
+        for f in S_F.split(","):
+            F.append(f'{f:0>2}')
 
-        # Get the string
+        N = int(D.pop(0))
+        while N > 59:
+            R = N % 60
+            N = N // 60
+            D = [f"{R:0>2}"] + D
+
+        D = [f"{N:0>2}"] + D
+
+        Inputs = D + F
+        for n in Inputs:
+            if int(n) > 59:
+                raise Exception("Fractional Part has 60+ entry")
+
+        D, F = ",".join([d.strip() for d in D]), ",".join([f.strip() for f in F])
+
+        S = f"{D};{F}"
+
+        self.S = S
+
+    def __repr__(self):
         S = self.S
 
-        # Add the negative sign if negative
         if self.negative:
             S = "-" + S
 
         return S
 
-    # The Addition of two Sexagesimal Numbers
-    def __add__(self, B: 'Sexagesimal') -> 'Sexagesimal':
-
-        # Get the terms
-        A = self
-
-        # Make them equal lengths, i.e in terms of Degrees and Fractional part
-        A1, B1 = self.makeEqualLen(A, B)
-
-        # Separate the Integer and the fraction part
-        A_D, A_F = A1.split(";")
-        B_D, B_F = B1.split(";")
-
-        # Convert String to List
-        A_D = self.input2List(A_D)
-        A_F = self.input2List(A_F)
-        B_D = self.input2List(B_D)
-        B_F = self.input2List(B_F)
-
-        # If one of the numbers is negative and other is positive
-        # Then it is same as  subtracting two positive numbers (order depends on the sign)
-        if A.negative is True and B.negative is False:
-
-            # Make A positive
-            A = Sexagesimal(A.S)
-            return B - A
-
-        elif A.negative is False and B.negative is True:
-
-            # Make B positive
-            B = Sexagesimal(B.S)
-            return A - B
-
-        # If both are negative or both are positive, then we add them
-        # And give the result the same sign as the numbers
-        # First Add the fractional part
-        # We use the most basic algorithm for addition of two numbers
-        # The one we learned in school (add with carry)
-        F = []  # To Store the result of fractional part addition
-        carry = 0  # To store the carry
-
-        # Loop until we cover all the fractional digits
-        while len(A_F) > 0:
-
-            # Get the (current) last digits of both numbers
-            a, b = A_F.pop(), B_F.pop()
-
-            # Add them with the carry
-            Sum = a + b + carry
-
-            # If the sum is greater than 60, then we have a carry
-            # While Initializing the Sexagesimal class, we made sure that fractional part has digits always less than 60
-            # Hence be sure that in any case, the sum will be less than 120
-            if Sum >= 60:
-                Sum -= 60
-                carry = 1
-            else:
-                carry = 0
-
-            F = [f"{Sum:0>2}"] + F
-
-        # Same for the degrees part
-        D = []
-
-        # Loop until we cover all the degree digits
-        while len(A_D) > 0:
-
-            # Get the (current) last digits of both numbers
-            a, b = A_D.pop(), B_D.pop()
-
-            # Add them with the carry
-            Sum = a + b + carry
-
-            # If the sum is greater than 60, then we have a carry
-            if Sum >= 60:
-                Sum -= 60
-                carry = 1
-            else:
-                carry = 0
-
-            D = [f"{Sum:0>2}"] + D
-
-        # Join the lists to get the final result
-        D = ",".join(D)
-        F = ",".join(F)
-        S = ";".join([D, F])
-
-        # Finally decide the sign of the result
-        if A.negative and B.negative:
-            S = "-" + S
-
-        return Sexagesimal(S)
-
-    # The Subtraction of two Sexagesimal Numbers
-    def __sub__(self, B: 'Sexagesimal') -> 'Sexagesimal':
+    def __add__(self, B):
 
         # Get the terms
         A = self
@@ -155,9 +74,219 @@ class Sexagesimal:
         B_D = self.input2List(B_D)
         B_F = self.input2List(B_F)
 
-        # If one of the numbers is negative and other is positive
-        # Then it is same as adding two positive numbers (with answer having the sign of the bigger number)
-        if A.negative is True and B.negative is False:
+        # Add the Decimal part
+        if A.negative and B.negative:
+            F = []
+            carry = 0
+            while len(A_F) > 0:
+
+                a, b = A_F.pop(), B_F.pop()
+                Sum = a + b + carry
+
+                if Sum >= 60:
+                    Sum -= 60
+                    carry = 1
+                else:
+                    carry = 0
+
+                F = [f"{Sum:0>2}"] + F
+
+            # Add the integral part
+            D = []
+            while len(A_D) > 0:
+
+                a, b = A_D.pop(), B_D.pop()
+                Sum = a + b + carry
+
+                if Sum >= 60:
+                    Sum -= 60
+                    carry = 1
+                else:
+                    carry = 0
+
+                D = [f"{Sum:0>2}"] + D
+
+            # print(carry)
+
+            D = ",".join(D)
+            F = ",".join(F)
+
+            return Sexagesimal("-" + ";".join([D, F]))
+
+        elif A.negative is True and B.negative is False:
+            A = Sexagesimal(A.S)
+            A.negative = False
+            return B - A
+
+        elif A.negative is False and B.negative is True:
+            B = Sexagesimal(B.S)
+            B.negative = False
+            return A - B
+
+        else:
+            F = []
+            carry = 0
+            while len(A_F) > 0:
+
+                a, b = A_F.pop(), B_F.pop()
+                Sum = a + b + carry
+
+                if Sum >= 60:
+                    Sum -= 60
+                    carry = 1
+                else:
+                    carry = 0
+
+                F = [f"{Sum:0>2}"] + F
+
+            # Add the integral part
+            D = []
+            while len(A_D) > 0:
+
+                a, b = A_D.pop(), B_D.pop()
+                Sum = a + b + carry
+
+                if Sum >= 60:
+                    Sum -= 60
+                    carry = 1
+                else:
+                    carry = 0
+
+                D = [f"{Sum:0>2}"] + D
+
+            if carry == 1:
+                D = ["01"] + D
+
+            D = ",".join(D)
+            F = ",".join(F)
+
+            return Sexagesimal(";".join([D, F]))
+
+    def __sub__(self, B):
+
+        # Get the terms
+        A = self
+
+        # Make them equal lengths
+        A1, B1 = self.makeEqualLen(A, B)
+
+        # Separate the Integer and the fraction part
+        A_D, A_F = A1.split(";")
+        B_D, B_F = B1.split(";")
+
+        # Convert String to List
+        A_D = self.input2List(A_D)
+        A_F = self.input2List(A_F)
+        B_D = self.input2List(B_D)
+        B_F = self.input2List(B_F)
+
+        if A.negative is False and B.negative is False:
+
+            if len(A_D) > len(B_D) or A > B:
+
+                F = []
+                carry = 0
+                while len(A_F) > 0:
+
+                    a, b = A_F.pop(), B_F.pop()
+
+                    if a < b:
+
+                        try:
+                            A_F[-1] -= 1
+                        except:
+                            A_D[-1] -= 1
+
+                        a += 60
+
+                    Diff = a - b + carry
+
+                    if Diff >= 60:
+                        Diff -= 60
+                        carry = 1
+                    else:
+                        carry = 0
+
+                    F = [f"{Diff:0>2}"] + F
+
+                # Add the integral part
+                D = []
+                while len(A_D) > 0:
+
+                    a, b = A_D.pop(), B_D.pop()
+
+                    if a < b:
+                        A_D[-1] -= 1
+                        a += 60
+
+                    Diff = a - b + carry
+
+                    if Diff >= 60:
+                        Diff -= 60
+                        carry = 1
+                    else:
+                        carry = 0
+
+                    D = [f"{Diff:0>2}"] + D
+
+                D = ",".join(D)
+                F = ",".join(F)
+
+                return Sexagesimal(";".join([D, F]))
+
+            else:
+
+                F = []
+                carry = 0
+                while len(A_F) > 0:
+
+                    a, b = A_F.pop(), B_F.pop()
+
+                    if b < a:
+
+                        try:
+                            B_F[-1] -= 1
+                        except:
+                            B_D[-1] -= 1
+
+                        b += 60
+
+                    Diff = b - a + carry
+
+                    if Diff >= 60:
+                        Diff -= 60
+                        carry = 1
+                    else:
+                        carry = 0
+
+                    F = [f"{Diff:0>2}"] + F
+
+                # Add the integral part
+                D = []
+                while len(A_D) > 0:
+                    a, b = A_D.pop(), B_D.pop()
+
+                    if b < a:
+
+                        B_D[-1] -= 1
+                        b += 60
+
+                    Diff = b - a + carry
+
+                    if Diff >= 60:
+                        Diff -= 60
+                        carry = 1
+                    else:
+                        carry = 0
+
+                    D = [f"{Diff:0>2}"] + D
+
+                D = ",".join(D)
+                F = ",".join(F)
+
+                return Sexagesimal("-" + ";".join([D, F]))
+
+        elif A.negative is True and B.negative is False:
 
             B = Sexagesimal(f"-{B.S}")
             return A + B
@@ -167,162 +296,131 @@ class Sexagesimal:
             B = Sexagesimal(f"-{B.S}")
             return A + B
 
-        # If both are positive, then we subtract them as positive numbers
-        # And give the result the same sign as the numbers
-        # Start with the fractional part
-        # We use the most basic algorithm for subtraction of two numbers
-        # Subtract the smaller number from the bigger number
-        if not A.negative and not B.negative:
-            if A > B:
-                return self.subtraction_with_borrow(A_D, A_F, B_D, B_F)
-            else:
-                return self.subtraction_with_borrow(B_D, B_F, A_D, A_F)
-
-        # Finally if nothing of the above, then both are negative
-        # Then it same as addition of two numbers we negative sign to the result
-        Ans = Sexagesimal(f"{A.S}") + Sexagesimal(f"{B.S}")
-        Ans.negative = True
-        return Ans
-
-    # Perform Subtraction with borrow method
-    def subtraction_with_borrow(self, greater_D, greater_F, lesser_D, lesser_F):
-
-        # Start with the fractional part
-        # We use the most basic algorithm for subtraction of two numbers
-        # Subtract the smaller number from the bigger number
-        F = []  # To Store the result of fractional part addition
-        while len(greater_F) > 0:
-
-            a, b = greater_F.pop(), lesser_F.pop()
-
-            if a < b:
-
-                # If no fractional part is left, then we borrow from the Degrees part
-                try:
-                    greater_F[-1] -= 1
-                except IndexError:
-                    greater_D[-1] -= 1
-
-                a += 60
-
-            Diff = a - b  # Rest assured that the difference will never be greater than 59
-
-            # Add the difference to the result list
-            F = [f"{Diff:0>2}"] + F
-
-        # Same for Degrees part
-        D = []
-        while len(greater_D) > 0:
-
-            a, b = greater_D.pop(), lesser_D.pop()
-
-            # Borrow if required
-            if a < b:
-                greater_D[-1] -= 1
-                a += 60
-
-            Diff = a - b
-
-            D = [f"{Diff:0>2}"] + D
-
-        # Join and return the result
-        D = ",".join(D)
-        F = ",".join(F)
-        return Sexagesimal("-" + ";".join([D, F]))
-
-    ## Helper functions  ##
-    # Process negative numbers
-    def process_negative(self, S: str) -> str:
-
-        # If it is negative set negative as True and remove the negative sign
-        if S[0] == "-":
-            self.negative = True
-
         else:
-            self.negative = False
 
-        return S
+            B = Sexagesimal(f"-{B.S}")
+            return B + A
 
-    # Check if number is decimal and convert to sexagesimal
-    def check_and_convert_decimal(self, S: str) -> str:
+    def __mul__(self, B):
 
-        # If the number is decimal, convert to sexagesimal
-        # Here we check if its is Sexagesimal (contains a ";")
-        # If not sexagsimal, then it is considered decimal
-        if ";" not in S:
-            S = (self.Decimal2Sexagesimal(S, 20 + len(S))).S
+        # Use the Multiplication Algorithm with default parameters
+        return self.Multiplication(self, B)
 
-        return S
+    def __truediv__(self, B):
 
-    # Check if S is a valid sexagesimal number
-    def is_valid_sexagesimal(self, S: str) -> bool:
+        # Use the Division Algorithm with default parameters
+        return self.Division(self, B)
 
-        # Split into Degrees and Fraction
-        Degrees, Fractions = S.split(";")
-
-        # If Degree has a "," then split it into a list
-        Deg = Degrees.split(",") if "," in Degrees else [Degrees]
-
-        # If Deg is only one element, then it is considered to be a decimal
-        # Hence convert that to base 60
-        if len(Deg) == 1:
-            # By default our custom Decimal2Sexagesimal converts everything to base 60
-            # Hence using that and splitting to take only the degrees
-            Deg = self.Decimal2Sexagesimal(Deg[0]).split(";")[0].split(",")
-
-        #  If not, then check if all the elements are less than 60
+    def __neg__(self):
+        if self.negative is True:
+            return Sexagesimal(self.S)
         else:
-            for i in Deg:
-                if int(i) >= 60:
-                    return False, ValueError("Invalid Sexagesimal Number: Degrees Part has a value greater than 60")
+            return Sexagesimal(f"-{self.S}")
 
-        # Similarly for Fractions
-        Frac = Fractions.split(",") if "," in Fractions else [Fractions]
+    def __pos__(self):
 
-        # Check if all the elements are less than 60
-        for i in Frac:
-            if int(i) >= 60:
-                return False, ValueError("Invalid Sexagesimal Number: Fraction Part has a value greater than 60")
+        if self.negative:
+            return Sexagesimal(f"-{self.S}")
+        else:
+            return Sexagesimal(self.S)
 
-        return True, None
+    def __pow__(self, n):
 
-    # Custom Split function for our Sexagesimal class
-    def split(self, symbol: str) -> List[str]:
-        return self.S.split(symbol)
+        A = self
 
-    # Standardize the Sexagesimal Number
-    def Standardize(self, S: str) -> str:
+        for i in range(n - 1):
+            A *= A
+        return A
 
-        # Split the Sexagesimal Number into Degrees and Fractions
-        Degrees, Fractions = S.split(";")
+    def __iadd__(self, B):
+        A = self
+        return A + B
 
-        # If Degree has a "," then split it into a list
-        Deg = Degrees.split(",") if "," in Degrees else [Degrees]
+    def __isub__(self, B):
+        A = self
+        return A - B
 
-        # Similarly for Fractions
-        Frac = Fractions.split(",") if "," in Fractions else [Fractions]
+    def __imul__(self, B):
+        A = self
+        return A * B
 
-        # Join the Degrees and Fractions
-        return ";".join([",".join([f"{d.strip():0>2}" for d in Deg]), ",".join([f"{f.strip():0>2}" for f in Frac])])
+    def __gt__(self, B):
 
-    # Convert the given Degree or Fractional part to list
-    def input2List(self, Input: str) -> List[str]:
+        A = self
 
-        # Split the String and Convert each element to positive integer
-        return [abs(int(x)) for x in Input.split(",")]
+        if A.negative and B.negative is False:
+            return False
 
-    # Make the degree and fractional parts of the two numbers equal length (string length for ease of use)
-    def makeEqualLen(self, A: 'Sexagesimal', B: 'Sexagesimal') -> Tuple['Sexagesimal', 'Sexagesimal']:
+        if A.negative is False and B.negative is True:
+            return True
 
-        # Split the Sexagesimal Numbers into Degrees and Fractions
+        if A.negative and B.negative:
+
+            A_D, A_F = A.S.split(";")
+            B_D, B_F = B.S.split(";")
+
+            if len(A_D) > len(B_D):
+                return False
+
+            if len(A_D) < len(B_D):
+                return True
+
+            for i in range(len(A_D)):
+                if A_D[i] > B_D[i]:
+                    return False
+
+                if B_D[i] > A_D[i]:
+                    return True
+
+            for i in range(len(A_F)):
+                if A_F[i] > B_F[i]:
+                    return False
+
+                if B_F[i] > A_F[i]:
+                    return True
+
+            return False
+
+        A_D, A_F = A.S.split(";")
+        B_D, B_F = B.S.split(";")
+
+        if len(A_D) > len(B_D):
+            return True
+
+        if len(A_D) < len(B_D):
+            return False
+
+        for i in range(len(A_D)):
+            if A_D[i] > B_D[i]:
+                return True
+
+            if B_D[i] > A_D[i]:
+                return False
+
+        for i in range(len(A_F)):
+            if A_F[i] > B_F[i]:
+                return True
+
+            if B_F[i] > A_F[i]:
+                return False
+
+        return True
+
+    # Helping Functions
+    def input2List(self, Input):
+        L = Input.split(",")
+        L = [abs(int(x)) for x in L]
+
+        return L
+
+    def makeEqualLen(self, A, B):
+
         A = str(A).split(";")
         B = str(B).split(";")
 
-        # Split the Degrees and Fractions into lists
         A_D, A_F = A[0].split(","), A[1].split(",")
         B_D, B_F = B[0].split(","), B[1].split(",")
 
-        # Compare lengths and add "00" to the shorter list
         if len(A_D) < len(B_D):
             m = len(B_D) - len(A_D)
             A_D = m * ["00"] + A_D
@@ -337,20 +435,17 @@ class Sexagesimal:
             m = len(A_F) - len(B_F)
             B_F += m * ["00"]
 
-        # Join the lists
         A_D = ",".join(A_D)
         A_F = ",".join(A_F)
         B_D = ",".join(B_D)
         B_F = ",".join(B_F)
 
-        # Join the Degrees and Fractions
         A = ";".join([A_D, A_F])
         B = ";".join([B_D, B_F])
 
-        return A, B
+        return (A, B)
 
-    # Convert the Degrees (Base 60 Formate) to Decimal
-    def Degrees2Decimal(Input: 'Sexagesimal') -> str:
+    def Integral2Decimal(Input):
 
         A_D, A_F = Input.S.split(";")
         A_D = A_D.split(",")
