@@ -1,5 +1,5 @@
 # Imports
-from decimal import Decimal
+from decimal import Decimal, getcontext
 from sympy import Rational
 from math import pow
 from copy import copy
@@ -359,6 +359,12 @@ class Sexagesimal:
     def __copy__(self) -> 'Sexagesimal':
         return Sexagesimal(self.S)
 
+    # The split function
+    def split(self, sep: str = " ") -> list:
+
+        # Split the string
+        return self.S.split(sep)    
+
     # Perform Subtraction with borrow method
     def subtraction_with_borrow(self, greater_D, greater_F, lesser_D, lesser_F):
 
@@ -412,6 +418,7 @@ class Sexagesimal:
         # If it is negative set negative as True and remove the negative sign
         if S[0] == "-":
             self.negative = True
+            S = S[1:]
 
         else:
             self.negative = False
@@ -441,9 +448,13 @@ class Sexagesimal:
         # If Deg is only one element, then it is considered to be a decimal
         # Hence convert that to base 60
         if len(Deg) == 1:
-            # By default our custom Decimal2Sexagesimal converts everything to base 60
-            # Hence using that and splitting to take only the degrees
-            Deg = self.Decimal2Sexagesimal(Deg[0]).split(";")[0].split(",")
+            N = int(Deg.pop(0))
+            while N > 59:
+                R = N % 60
+                N = N // 60
+                Deg = [f"{R:0>2}"] + Deg
+
+            Deg = [f"{N:0>2}"] + Deg
 
         #  If not, then check if all the elements are less than 60
         else:
@@ -538,7 +549,7 @@ class Sexagesimal:
         return f"{Dec};{A_F}"
 
     @staticmethod
-    def RoundOff(Number, precision):
+    def RoundOff(Number: 'Sexagesimal', precision):
 
         if precision < 0:
             return Number
