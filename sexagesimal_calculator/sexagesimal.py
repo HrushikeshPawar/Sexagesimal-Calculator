@@ -1,5 +1,5 @@
 # Imports
-from decimal import Decimal, getcontext
+from decimal import Decimal, getcontext, InvalidOperation
 from sympy import Rational
 from math import pow
 from copy import copy
@@ -35,6 +35,9 @@ class Sexagesimal:
     # The String representation of the class
     def __str__(self) -> str:
 
+        if self.S == Sexagesimal(0).S:
+            self.negative = False
+
         # Get the string
         S = self.S
 
@@ -66,17 +69,13 @@ class Sexagesimal:
 
         # If one of the numbers is negative and other is positive
         # Then it is same as  subtracting two positive numbers (order depends on the sign)
-        if A.negative is True and B.negative is False:
-
+        if A.negative and not B.negative:
             # Make A positive
-            A = Sexagesimal(A.S)
-            return B - A
+            return B - (-A)
 
-        elif A.negative is False and B.negative is True:
-
+        elif not A.negative and B.negative:
             # Make B positive
-            B = Sexagesimal(B.S)
-            return A - B
+            return A - (-B)
 
         # If both are negative or both are positive, then we add them
         # And give the result the same sign as the numbers
@@ -145,30 +144,11 @@ class Sexagesimal:
         A = copy(self)
         B = copy(B)
 
-        # Make them equal lengths
-        A1, B1 = self.makeEqualLen(A, B)
-
-        # Separate the Integer and the fraction part
-        A_D, A_F = A1.split(";")
-        B_D, B_F = B1.split(";")
-
-        # Convert String to List
-        A_D = self.input2List(A_D)
-        A_F = self.input2List(A_F)
-        B_D = self.input2List(B_D)
-        B_F = self.input2List(B_F)
-
         # If one of the numbers is negative and other is positive
         # Then it is same as adding two positive numbers (with answer having the sign of the bigger number)
-        if A.negative is True and B.negative is False:
-
-            B = Sexagesimal(f"-{B.S}")
-            return A + B
-
-        elif B.negative is True and A.negative is False:
-
-            B = Sexagesimal(f"-{B.S}")
-            return A + B
+        if (A.negative and not B.negative) or (B.negative and not A.negative):
+            print(A, B)
+            return A + (-B)
 
         # If both are positive, then we subtract them as positive numbers
         # And give the result the same sign as the numbers
@@ -176,6 +156,20 @@ class Sexagesimal:
         # We use the most basic algorithm for subtraction of two numbers
         # Subtract the smaller number from the bigger number
         if not A.negative and not B.negative:
+
+            # Make them equal lengths
+            A1, B1 = self.makeEqualLen(A, B)
+
+            # Separate the Integer and the fraction part
+            A_D, A_F = A1.split(";")
+            B_D, B_F = B1.split(";")
+
+            # Convert String to List
+            A_D = self.input2List(A_D)
+            A_F = self.input2List(A_F)
+            B_D = self.input2List(B_D)
+            B_F = self.input2List(B_F)
+
             if A > B:
                 return self.subtraction_with_borrow(A_D, A_F, B_D, B_F)
             else:
@@ -183,9 +177,7 @@ class Sexagesimal:
 
         # Finally if nothing of the above, then both are negative
         # Then it same as addition of two numbers we negative sign to the result
-        Ans = Sexagesimal(f"{A.S}") + Sexagesimal(f"{B.S}")
-        Ans.negative = True
-        return Ans
+        return A + (-B)
 
     # The Multiplication of two Sexagesimal Numbers
     def __mul__(self, B: 'Sexagesimal') -> 'Sexagesimal':
@@ -277,8 +269,8 @@ class Sexagesimal:
 
         # Make them equal lengths
         A, B = self.makeEqualLen(A, B)
-        A_D, A_F = A.S.split(";")
-        B_D, B_F = B.S.split(";")
+        A_D, A_F = A.split(";")
+        B_D, B_F = B.split(";")
 
         for i in range(len(A_D)):
             if A_D[i] > B_D[i]:
@@ -317,8 +309,8 @@ class Sexagesimal:
         # Make them equal lengths
         A, B = self.makeEqualLen(A, B)
 
-        A_D, A_F = A.S.split(";")
-        B_D, B_F = B.S.split(";")
+        A_D, A_F = A.split(";")
+        B_D, B_F = B.split(";")
 
         for i in range(len(A_D)):
             if A_D[i] < B_D[i]:
@@ -357,13 +349,15 @@ class Sexagesimal:
 
     # Copy Function
     def __copy__(self) -> 'Sexagesimal':
-        return Sexagesimal(self.S)
+        num = Sexagesimal(self.S)
+        num.negative = self.negative
+        return num
 
-    # The split function
+    # Custom Split function for our Sexagesimal class
     def split(self, sep: str = " ") -> list:
 
         # Split the string
-        return self.S.split(sep)    
+        return self.S.split(sep)
 
     # Perform Subtraction with borrow method
     def subtraction_with_borrow(self, greater_D, greater_F, lesser_D, lesser_F):
@@ -472,10 +466,6 @@ class Sexagesimal:
 
         return True, None
 
-    # Custom Split function for our Sexagesimal class
-    def split(self, symbol: str) -> List[str]:
-        return self.S.split(symbol)
-
     # Standardize the Sexagesimal Number
     def Standardize(self, S: str) -> str:
 
@@ -489,7 +479,12 @@ class Sexagesimal:
         Frac = Fractions.split(",") if "," in Fractions else [Fractions]
 
         # Join the Degrees and Fractions
-        return ";".join([",".join([f"{d.strip():0>2}" for d in Deg]), ",".join([f"{f.strip():0>2}" for f in Frac])])
+        value = ";".join([",".join([f"{d.strip():0>2}" for d in Deg]), ",".join([f"{f.strip():0>2}" for f in Frac])])
+
+        # Remove sign from zero
+        value = value.replace("-00", "00")
+
+        return value
 
     # Convert the given Degree or Fractional part to list
     def input2List(self, Input: str) -> List[str]:
@@ -538,7 +533,7 @@ class Sexagesimal:
     # Convert the Degrees (Base 60 Formate) to Decimal
     def Degrees2Decimal(Input: 'Sexagesimal') -> str:
 
-        A_D, A_F = Input.S.split(";")
+        A_D, A_F = Input.split(";")
         A_D = A_D.split(",")
 
         Dec = 0
@@ -548,15 +543,16 @@ class Sexagesimal:
 
         return f"{Dec};{A_F}"
 
+    # Round off the given Sexagesimal Number to the given precision
     @staticmethod
-    def RoundOff(Number: 'Sexagesimal', precision):
+    def RoundOff(Number: Union['Sexagesimal', str], precision: int) -> 'Sexagesimal':
 
         if precision < 0:
             return Number
 
         try:
-            D, F = Number.S.split(";")
-        except:
+            D, F = Number.split(";")
+        except AttributeError:    # If Number is not a Sexagesimal Number, just a string
             D, F = Number.split(";")
 
         F = F.split(',')
@@ -597,8 +593,9 @@ class Sexagesimal:
         else:
             return Number
 
+    # Get the reciprocal of the given Sexagesimal Number, upto the given precision (if non-terminating)
     @staticmethod
-    def getReciprocal(N, precision=99):
+    def getReciprocal(N: int, precision: int = 99):
 
         if precision < 99:
             precision = 99
@@ -651,17 +648,18 @@ class Sexagesimal:
             Sexa.append("00")
 
         if flag:
-            return(f"{Sexa[0]};{','.join(Sexa[1:])}", Recur, flag)
+            return (f"{Sexa[0]};{','.join(Sexa[1:])}", Recur, flag)
         else:
             return (Sexagesimal(f"{Sexa[0]};{','.join(Sexa[1:])}"), Recur, flag)
 
+    # Convert the given Sexagesimal Number to its Rational Form
     @staticmethod
-    def getRationlForm(Number):
+    def getRationlForm(Number: Union['Sexagesimal', str]):
 
         try:
-            Number = Number.S
-        except:
-            Number = Number
+            Number: str = Number.S
+        except AttributeError:  # If Number is just a string, just pass it on
+            pass
 
         D, F = Number.split(";")
         D = D.split(",")
@@ -678,8 +676,9 @@ class Sexagesimal:
         R = D_R + F_R
         return sum(R)
 
+    # Convert the given Decimal Number to Sexagesimal
     @staticmethod
-    def Decimal2Sexagesimal(Input, Accuracy=20):
+    def Decimal2Sexagesimal(Input: Union[int, float, str], Accuracy: int = 20) -> 'Sexagesimal':
         Input = str(Input)
         getcontext().prec = 100
 
@@ -710,7 +709,7 @@ class Sexagesimal:
                 M = str(Decimal(N) * 60)
                 m = len(N) - len(M)
                 M = "0" * m + M
-            except:
+            except InvalidOperation:  # if N == ''
                 N += "0"
                 continue
 
@@ -733,12 +732,13 @@ class Sexagesimal:
 
         return result
 
+    # Convert the given Sexagesimal Number from Mod 60 (default form) to Mod N. Output is a string
     @staticmethod
-    def mod60ToMod(Input, mod):
+    def mod60ToMod(Input: 'Sexagesimal', mod: int) -> str:
 
         try:
             A = Input.S
-        except:
+        except AttributeError:  # if Input is not a Sexagesimal Object
             print("Not a Sexagesimal Object")
             return
 
@@ -756,8 +756,9 @@ class Sexagesimal:
 
         return f"{D};{A_F}"
 
+    # Convert the Sexagesimal to a Decimal number
     @staticmethod
-    def Sexagesimal2Decimal(Input, precision=20):
+    def Sexagesimal2Decimal(Input: Union['Sexagesimal', str], precision: int = 20):
 
         if isinstance(type(Input), type(Sexagesimal("1"))):
             A = Input.S
@@ -776,6 +777,7 @@ class Sexagesimal:
         if ';' not in A:
             A = f'{A};00'
 
+        # Get the Decimal and Fractional Part
         A_D, A_F = A.split(";")
         A_D = A_D.split(",")
         A_F = A_F.split(",")
@@ -816,14 +818,15 @@ class Sexagesimal:
         except Exception as e:
             print(e)
 
+    # Multipling the two sexagesimal numbers
     @staticmethod
-    def Multiplication(A, B, verbose=False):
+    def Multiplication(A: Union['Sexagesimal', str], B: Union['Sexagesimal', str], verbose: bool = False):
 
         # Get A and B as right form of Sexagesimal string
         try:
             A_S = A.S
             B_S = B.S
-        except:
+        except AttributeError:  # If Input is just a string
             A = Sexagesimal(A)
             B = Sexagesimal(B)
             A_S = A.S
@@ -861,7 +864,7 @@ class Sexagesimal:
             if i == 0:
                 Multiplication.append([])
             else:
-                Multiplication.append(i * [0])
+                Multiplication.append([0 for _ in range(i)])
 
             for A_f in A_F[::-1]:
                 carry_old = carry
@@ -875,7 +878,6 @@ class Sexagesimal:
                     carry = 0
 
                 Multiplication[i] = [prod] + Multiplication[i]
-                # print(f"\t{f:0>2}  *  {A_f:0>2}  +  {carry_old:0>2}\t=\t{60*carry + prod:0>2}\t=\t60 * {carry:0>2} + {prod:0>2}")
                 Details += f"\n\t{f:0>2}  *  {A_f:0>2}  +  {carry_old:0>2}\t=\t{60*carry + prod:0>2}\t=\t60 * {carry:0>2} + {prod:0>2}"
 
             for A_d in A_D[::-1]:
@@ -947,7 +949,7 @@ class Sexagesimal:
                     carry = carry // 60
                     Multiplication[i] = [R] + Multiplication[i]
                 Multiplication[i] = [carry] + Multiplication[i]
-            # print(f"\n\t{d}  *  {A}\t=\t{Multiplication[i]}\n")
+
             Details += f"\n\n\t{d}  *  {A}\t=\t{Multiplication[i]}\n"
 
         # Step 4: Make all the rows of equal length
@@ -963,8 +965,8 @@ class Sexagesimal:
             Row = []
             for elem in row:
                 Row.append(f"{elem:0>2}")
+
             Row = " | ".join(Row)
-            # print(f"\t | {Row} |")
             Details += f"\n\t | {Row} |"
 
         # Step 5: Add all the rows, column by column, from right to left
@@ -1044,18 +1046,17 @@ class Sexagesimal:
         else:
             return result
 
+    # Division of two Sexagesimal Numbers
     @staticmethod
-    def Division(A, B, precision=20, verbose=False):
+    def Division(A: Union['Sexagesimal', str], B: Union['Sexagesimal', str], precision: int = 20, verbose: bool = False):
 
         # Get A and B as right form of Sexagesimal string
         try:
             A.S
             B.S
-        except:
+        except AttributeError:  # If A or B is not a Sexagesimal object
             A = Sexagesimal(A)
             B = Sexagesimal(B)
-            # A_S = A.S
-            # B_S = B.S
 
         # Print the above details
         Details = "\n\n\n\n**Inputs:**"
@@ -1065,7 +1066,7 @@ class Sexagesimal:
         # Step1 : Get the Rational Form of B
         try:
             B_Num, B_Denom = str(Sexagesimal.getRationlForm(B)).split("/")
-        except:
+        except ValueError:  # Not enough values to unpack
             B_Num = str(Sexagesimal.getRationlForm(B))
             B_Denom = 1
 
@@ -1109,7 +1110,7 @@ class Sexagesimal:
         else:
             Div.negative = False
 
-        if len(Div.S.split(";")[1].split(",")) > precision:
+        if len(Div.split(";")[1].split(",")) > precision:
             Div = Sexagesimal.RoundOff(Div, precision)
 
         Details += "\n\n\nStpe 4: Do the actual Division (A/B = A * B')"
@@ -1117,12 +1118,12 @@ class Sexagesimal:
 
         if flag:
 
-            A_D, A_F = A.S.split(";")
+            A_D, A_F = A.split(";")
             A_D = A_D.split(",")
             A_F = A_F.split(",")
 
             A_New = Div * B
-            A_New_D, A_New_F = A_New.S.split(";")
+            A_New_D, A_New_F = A_New.split(";")
             A_New_D = A_New_D.split(",")
             A_New_F = A_New_F.split(",")
 
@@ -1201,7 +1202,7 @@ class Sexagesimal:
     def IntegralModN(A, N):
 
         A = Sexagesimal(A)
-        A_D, A_F = A.S.split(";")
+        A_D, A_F = A.split(";")
         A_D = A_D.split(",")[::-1]
 
         D = 0
