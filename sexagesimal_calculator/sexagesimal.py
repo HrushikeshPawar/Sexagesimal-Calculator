@@ -147,7 +147,6 @@ class Sexagesimal:
         # If one of the numbers is negative and other is positive
         # Then it is same as adding two positive numbers (with answer having the sign of the bigger number)
         if (A.negative and not B.negative) or (B.negative and not A.negative):
-            print(A, B)
             return A + (-B)
 
         # If both are positive, then we subtract them as positive numbers
@@ -649,14 +648,11 @@ class Sexagesimal:
             Sexa.append(f"{Quo:0>2}")
             Dividend = Rem
 
-            # print(Sexa, Dividend)
             Dividend *= 60
-            # print(Sexa, Dividend)
             if len(Sexa) > precision:
                 flag = True
                 break
 
-        # print(f"Dividend : {Dividend}\nlen(Sexa) : {len(Sexa)}\nFlag : {flag}\nPrecision : {precision}")
         if len(Sexa) == 1:
             Sexa.append("00")
 
