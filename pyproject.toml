@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "sexagesimal-calculator"
+version = "1.2.0"
+description = "Performing calculations in Sexagesimal Coordinate System."
+authors = ["Hrushikesh Pawar <hrushikeshpawar96@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/HrushikeshPawar/Sexagesimal-Calculator"
+keywords = ["sexagesimal", "calculator", "coordinates", "coordinates system"]
+classifiers = [
+    "Intended Audience :: Education",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+
+
+[tool.poetry.dependencies]
+python = "^3.10"
+sympy = "^1.11.1"
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.2.0"
+flake8 = "^6.0.0"
+pre-commit = "^3.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
