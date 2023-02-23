@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sexagesimal-calculator"
-version = "1.2.0"
+version = "1.2.1"
 description = "Performing calculations in Sexagesimal Coordinate System."
 authors = ["Hrushikesh Pawar <hrushikeshpawar96@gmail.com>"]
 license = "MIT"
