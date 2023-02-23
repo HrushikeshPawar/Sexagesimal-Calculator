@@ -11,7 +11,7 @@ You can install the Sexagesimal Calculator from [PyPI](https://pypi.org/project/
     python -m pip install sexagesimal-calculator
 
 ## How to use
-     
+
     >>> from sexagesimal_calculator.sexagesimal import Sexagesimal
     >>> A = Sexagesimal(289)
     >>> A
@@ -32,7 +32,7 @@ You can install the Sexagesimal Calculator from [PyPI](https://pypi.org/project/
 ### 1. Decimal to Sexagesimal Converter (Input should be decimal number.)
 - Allowed inputs - `1, 0.23, .23, 1.0`
 - Use `Sexagesimal.Decimal2Sexagesimal(Input, Accuracy=20)`
-- **Accuracy** (optional) : 
+- **Accuracy** (optional) :
     - The number of digits to consider after the decimal point.
     - Default value is 20 (digits after decimal point).
     - Example : If input is `1.23456` and accuracy is `2`, then the program will consider only `1.23` for conversion.
@@ -50,26 +50,26 @@ You can install the Sexagesimal Calculator from [PyPI](https://pypi.org/project/
 
 ### 2. Sexagesimal to Decimal Converter:
 - Input should be a sexagesimal number.
-- ` ; ` should be used to separat the intergal part 
+- ` ; ` should be used to separat the intergal part
 - ` , ` should be used to separate the fractional apart.
 - Use `Sexagesimal.Sexagesimal2Decimal(Input, precision=20)`
 - Example : `12;01,45,12`
 - **Precision** (optional) :
     - Number of fractional places to consider in the final result.
-    - Examples: 
-        - `21;19,53,47,43,29  --->  21.33160983667695473251` (20 decimal places). 
+    - Examples:
+        - `21;19,53,47,43,29  --->  21.33160983667695473251` (20 decimal places).
         - But if Precision value is 30, then the result will be `21.331609836676954732510288065844`
     - By default, the program will give result till 20 decimal places.
     - This option is helpful if the given sexagesimal number contains a non-regular number in the fractional part.
 ```
 >>> A = Sexagesimal('21;19,53,47,43,29')
->>> Sexagesimal.Sexagesimal2Decimal(A)                  
+>>> Sexagesimal.Sexagesimal2Decimal(A)
 '21.33160983667695473251'
->>> Sexagesimal.Sexagesimal2Decimal(A, 30) 
+>>> Sexagesimal.Sexagesimal2Decimal(A, 30)
 '21.331609836676954732510288065844'
->>> Sexagesimal.Sexagesimal2Decimal(A, 10) 
+>>> Sexagesimal.Sexagesimal2Decimal(A, 10)
 '21.3316098367'
->>> Sexagesimal.Sexagesimal2Decimal(A, 50) 
+>>> Sexagesimal.Sexagesimal2Decimal(A, 50)
 '21.33160983667695473251028806584362139917695473251029'
 ```
 
@@ -150,7 +150,7 @@ You can install the Sexagesimal Calculator from [PyPI](https://pypi.org/project/
     ```
     >>> A = Sexagesimal(3.24)
     >>> B = Sexagesimal('6;04')
-    >>> res, details = Sexagesimal.Division(A, B, verbose=True) 
+    >>> res, details = Sexagesimal.Division(A, B, verbose=True)
     >>> res
     00;32,02,38,14,30,19,46,48,47,28,21,05,56,02,38,14,30,19,46,49
     >>> print(details)
