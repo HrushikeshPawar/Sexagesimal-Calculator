@@ -1,710 +1,1100 @@
 # Imports
-from decimal import Decimal, getcontext, InvalidOperation
-from sympy import Rational
+from dataclasses import dataclass
+from decimal import Decimal, InvalidOperation, getcontext
 from math import pow
-from copy import copy
-from typing import Union, List, Tuple
+from typing import List, Tuple, Union
+
+from sympy import Rational
+
+# Constants
+BASE = 60
+PART_SEP = ";"
+VAL_SEP = ","
+
+
+@dataclass(frozen=True, slots=True)
+class _SexagesimalParts:
+    """
+    An immutable, private container for the normalized components of a
+    sexagesimal number.
+
+    Using frozen=True makes instances immutable and hashable.
+    Using slots=True optimizes memory usage and attribute access speed.
+    """
+
+    is_negative: bool
+    integer_part: Tuple[int, ...]
+    fractional_part: Tuple[int, ...]
 
 
 # The Sexagesimal class
 class Sexagesimal:
+    """
+    Represents an immutable sexagesimal (base-60) number.
+
+    This class provides a robust way to handle sexagesimal numbers, which are
+    common in historical mathematics and astronomy. It supports standard
+    arithmetic operations while ensuring that all calculations are performed
+    natively in base-60.
+
+    Instances of this class are immutable. All arithmetic operations return a
+    new `Sexagesimal` instance.
+
+    Args:
+        value (Union[str, int, float, Sexagesimal]): The value to initialize
+            the number with.
+            - If str: Can be a decimal ('1.5') or sexagesimal ('01;30').
+            - If int or float: Will be converted from decimal.
+            - If Sexagesimal: A new instance is created from the provided one.
+
+    Attributes:
+        is_negative (bool): True if the number is negative.
+        integer_part (Tuple[int, ...]): A tuple representing the integer
+            places of the number. For 123;45 (2,3;45), this would be (2, 3).
+        fractional_part (Tuple[int, ...]): A tuple representing the fractional
+            places of the number. For 123;45, this would be (45,).
+
+    Raises:
+        ValueError: If the input string is not in a valid decimal or
+            sexagesimal format, or if any sexagesimal part is >= 60.
+
+    Examples:
+        >>> a = Sexagesimal("04;10,30")
+        >>> b = Sexagesimal(1.5)  # Creates Sexagesimal("01;30")
+        >>> print(a + b)
+        05;40,30
+    """
+
     # The constructor
-    def __init__(self, S: Union[str, int]):
-        # Get the input as String
-        S = str(S).strip()
+    def __init__(self, value: Union[str, int, float]):
+        """
+        Initialize a Sexagesimal instance.
 
-        # Perform negative number check
-        S = self.process_negative(S)
+        Create an immutable sexagesimal (base-60) number from a string, int, float, or another Sexagesimal.
+        Decimal inputs (e.g. 1.5 or "1.5") are converted to sexagesimal; sexagesimal strings (e.g. "01;30,15")
+        are validated and normalized; passing a Sexagesimal returns an equivalent instance.
 
-        # If number is decimal, convert to sexagesimal
-        S = self.check_and_convert_decimal(S)
+        Args:
+            value (Union[str, int, float, Sexagesimal]): The value to initialize the instance from.
+                - str: a decimal string ("1.5") or a sexagesimal string ("01;30,15" or "1;30").
+                - int or float: treated as a decimal number and converted to sexagesimal.
+                - Sexagesimal: an existing instance whose internal parts are copied.
 
-        # At this point, the input is in sexagesimal format, hence we
-        # Finally Check if the input is valid Sexagesimal
-        is_valid, error = self.is_valid_sexagesimal(S)
+        Raises:
+            ValueError: If the input cannot be parsed as a decimal or sexagesimal string.
+            ValueError: If any sexagesimal part is not in the valid range [0, 59].
 
-        # If not valid, raise the error
-        if not is_valid:
-            raise error
+        """
+        # Step 0: Handle Sexagesimal input directly i.e Sexagesimal(Sexagesimal(...))
+        if isinstance(value, Sexagesimal):
+            self._parts = value._parts
+            return
 
-        # If valid, Convert the String to Standard Sexagesimal Format
-        self.S = self.Standardize(S)
+        # Step 1: Normalize input to string format for parsing
+        str_value = str(value).strip()
+
+        # Step 2: Extract the sign
+        is_negative = False
+        if str_value.startswith("-"):
+            is_negative = True
+            str_value = str_value[1:]
+
+        # Step 3: Check if number is decimal, convert decimal strings to sexagesimal strings
+        if PART_SEP not in str_value:
+            str_value = Sexagesimal.Decimal2Sexagesimal(str_value, 40)
+
+        # Step 4: Parse the sexagesimal string into integer and fractional parts
+        try:
+            integer_str, fractional_str = str_value.split(PART_SEP)
+
+            integer_parts = [int(part) for part in integer_str.split(VAL_SEP) if part]
+            fractional_parts = [int(part) for part in fractional_str.split(VAL_SEP) if part]
+
+        except (ValueError, IndexError):
+            raise ValueError("Invalid input format. Expected decimal or sexagesimal string.")
+
+        # Validate parts
+        if any(part >= BASE for part in integer_parts):
+            raise ValueError(f"Integer Part has a value greater than {BASE}")
+
+        if any(part >= BASE for part in fractional_parts):
+            raise ValueError(f"Fraction Part has a value greater than {BASE}")
+
+        # Step 5: Normalize the parts (remove leading/trailing zeros) and create a frozen dataclass
+        self._parts = Sexagesimal._normalize_parts(integer_parts, fractional_parts, is_negative)
+
+    @classmethod
+    def _from_parts(cls, parts: _SexagesimalParts) -> "Sexagesimal":
+        """
+        Create a Sexagesimal instance directly from normalized parts.
+
+        This internal classmethod constructs a new Sexagesimal object without invoking
+        __init__, by attaching a pre-normalized _SexagesimalParts container to the
+        new instance. It is used throughout the implementation to return results
+        produced by internal algorithms without re-parsing or re-normalizing.
+
+        Args:
+            parts (_SexagesimalParts): An immutable, normalized parts container with:
+                - is_negative (bool): sign of the value
+                - integer_part (Tuple[int, ...]): canonical integer-place digits
+                - fractional_part (Tuple[int, ...]): canonical fractional-place digits
+
+        Returns:
+            Sexagesimal: A new Sexagesimal instance whose internal _parts is `parts`.
+
+        Notes:
+            - The caller is responsible for ensuring `parts` are already normalized
+              (no extraneous leading integer zeros or trailing fractional zeros,
+              except the canonical zero representation).
+            - This method preserves immutability by reusing the frozen _SexagesimalParts.
+        """
+        instance: Sexagesimal = cls.__new__(cls)
+        instance._parts = parts
+        return instance
+
+    # --- Public Properties for Safe, Read-Only Access ---
+    @property
+    def is_negative(self) -> bool:
+        return self._parts.is_negative
+
+    @property
+    def integer_part(self) -> Tuple[int, ...]:
+        return self._parts.integer_part
+
+    @property
+    def fractional_part(self) -> Tuple[int, ...]:
+        return self._parts.fractional_part
 
     # The String representation of the class
     def __str__(self) -> str:
-        if self.S == Sexagesimal(0).S:
-            self.negative = False
+        """
+        Return the canonical sexagesimal string representation.
 
-        # Get the string
-        S = self.S
+        Produces a normalized string in the form "[sign]DD[,DD...];FF[,FF...]" where:
+          - each degree or fractional place is zero-padded to two digits,
+          - the integer and fractional parts are separated by ';',
+          - individual places are separated by ','.
+        Zero is always represented as "00;00" (no negative sign). Negative values are
+        prefixed with a leading '-' character.
 
-        # Add the negative sign if negative
-        if self.negative:
-            S = "-" + S
+        Returns:
+            str: Canonical sexagesimal string for this instance, e.g. "05;30,15" or "-01;00".
+        """
 
-        return S
+        # Handle canonical zero representation
+        if self._parts.integer_part == (0,) and self._parts.fractional_part == (0,):
+            return "00;00"
+
+        # Format integer part, ensuring at least one digit
+        integer_str: str = (
+            VAL_SEP.join(f"{part:02d}" for part in self._parts.integer_part) if self._parts.integer_part else "00"
+        )
+
+        # Format fractional part, ensuring at least one digit
+        fractional_str: str = (
+            VAL_SEP.join(f"{part:02d}" for part in self._parts.fractional_part) if self._parts.fractional_part else "00"
+        )
+
+        sign: str = "-" if self._parts.is_negative else ""
+
+        return f"{sign}{integer_str}{PART_SEP}{fractional_str}"
+
+    def __repr__(self) -> str:
+        return f"Sexagesimal('{self!s}')"
+
+    @staticmethod
+    def _normalize_parts(integer_parts: List[int], fractional_parts: List[int], is_negative: bool) -> _SexagesimalParts:
+        """
+        Normalize integer and fractional sexagesimal digit lists into a canonical parts container.
+
+        Summary:
+            Cleans up the provided integer and fractional digit lists so they represent a
+            canonical, immutable sexagesimal value. This includes:
+              - removing extraneous leading zeros from the integer part,
+              - removing extraneous trailing zeros from the fractional part,
+              - ensuring a canonical representation for zero (integer_part=(0,), fractional_part=(0,)),
+              - preserving the sign except that zero is always non-negative.
+
+        Notes:
+            - The function returns a frozen _SexagesimalParts dataclass suitable for storage
+              on Sexagesimal instances.
+            - The implementation operates in-place on the provided lists (it mutates the
+              lists by popping). Callers who need to keep their originals should pass copies.
+            - The canonical fractional part is always non-empty; if all fractional digits are
+              stripped, it becomes [0].
+
+        Args:
+            integer_parts (List[int]): List of integer-place base-60 digits (most-significant first).
+            fractional_parts (List[int]): List of fractional-place base-60 digits (most-significant first).
+            is_negative (bool): Sign flag; will be cleared for the canonical zero representation.
+
+        Returns:
+            _SexagesimalParts: Immutable, normalized parts with fields:
+                - is_negative (bool)
+                - integer_part (Tuple[int, ...])
+                - fractional_part (Tuple[int, ...])
+        """
+
+        # Remove leading zeros in integer part
+        while len(integer_parts) > 1 and integer_parts[0] == 0:
+            integer_parts.pop(0)
+
+        # Remove trailing zeros in fractional part
+        while len(fractional_parts) > 1 and fractional_parts[-1] == 0:
+            fractional_parts.pop()
+
+        # Enforce canonical representation for zero fractional part.
+        # If the fractional part is empty after stripping zeros, it must be represented as [0].
+        if not fractional_parts:
+            fractional_parts = [0]
+
+        # Handle zero case
+        if (not integer_parts and not fractional_parts) or (
+            all(part == 0 for part in integer_parts + fractional_parts)
+        ):
+            integer_parts = [0]
+            fractional_parts = [0]
+            is_negative = False  # Zero is not negative
+
+        return _SexagesimalParts(
+            is_negative=is_negative, integer_part=tuple(integer_parts), fractional_part=tuple(fractional_parts)
+        )
+
+    @staticmethod
+    def _pad_parts(
+        parts_A: Tuple[int, ...], parts_B: Tuple[int, ...], pad_left: bool = True
+    ) -> Tuple[Tuple[int, ...], Tuple[int, ...]]:
+        """
+        Pad two sexagesimal-part tuples so they have equal length.
+
+        Summary:
+            Return two new tuples obtained by padding the shorter of the two inputs
+            with zero-valued digits so both tuples share the same length. When
+            pad_left is True zeros are added to the left (most-significant side),
+            which is appropriate for integer-part alignment. When pad_left is False
+            zeros are added to the right (least-significant side), which is
+            appropriate for fractional-part alignment.
+
+        Args:
+            parts_A (Tuple[int, ...]): First sequence of base-60 digits (most-significant first).
+            parts_B (Tuple[int, ...]): Second sequence of base-60 digits (most-significant first).
+            pad_left (bool, optional): If True pad on the left (MSB side). If False pad on the
+                right (LSB side). Defaults to True.
+
+        Returns:
+            Tuple[Tuple[int, ...], Tuple[int, ...]]: A pair (padded_A, padded_B) where both
+            tuples have equal length and original ordering of digits is preserved.
+
+        Notes:
+            - This function does not mutate the input tuples; it returns new tuples.
+            - It is used by arithmetic helpers to align integer and fractional parts
+              prior to digit-wise addition, subtraction and comparison.
+        """
+        max_len = max(len(parts_A), len(parts_B))
+        if pad_left:
+            padded_A = (0,) * (max_len - len(parts_A)) + parts_A
+            padded_B = (0,) * (max_len - len(parts_B)) + parts_B
+        else:
+            padded_A = parts_A + (0,) * (max_len - len(parts_A))
+            padded_B = parts_B + (0,) * (max_len - len(parts_B))
+
+        return padded_A, padded_B
 
     # The Addition of two Sexagesimal Numbers
-    def __add__(self, B: "Sexagesimal") -> "Sexagesimal":
-        # Get the terms (Don't want to accidentally change the original numbers)
-        A = copy(self)
-        B = copy(B)
+    def __add__(self, other: "Sexagesimal") -> "Sexagesimal":
+        if not isinstance(other, Sexagesimal):
+            return NotImplemented
 
-        # Make them equal lengths, i.e in terms of Degrees and Fractional part
-        A1, B1 = self.makeEqualLen(A, B)
+        # Handle Signs
+        if self.is_negative and not other.is_negative:
+            # i.e (-A) + B ==> B - A
+            return other - (-self)
+        elif not self.is_negative and other.is_negative:
+            # i.e A + (-B) ==> A - B
+            return self - (-other)
 
-        # Separate the Integer and the fraction part
-        A_D, A_F = A1.split(";")
-        B_D, B_F = B1.split(";")
+        # ---------------------------------------------------------------------------- #
+        #                          Core Arithmetics on Tuples                          #
+        # ---------------------------------------------------------------------------- #
 
-        # Convert String to List
-        A_D = self.input2List(A_D)
-        A_F = self.input2List(A_F)
-        B_D = self.input2List(B_D)
-        B_F = self.input2List(B_F)
+        # Step 1: Pad fractional parts with zeros to equal length
+        self_frac, other_frac = self._pad_parts(self.fractional_part, other.fractional_part, pad_left=False)
 
-        # If one of the numbers is negative and other is positive
-        # Then it is same as  subtracting two positive numbers (order depends on the sign)
-        if A.negative and not B.negative:
-            # Make A positive
-            return B - (-A)
+        # Step 2: Add fractional parts with carry
+        frac_result: List[int] = []
+        carry: int = 0
+        for a, b in zip(reversed(self_frac), reversed(other_frac)):
+            total: int = a + b + carry
+            frac_result.insert(0, total % BASE)
+            carry: int = total // BASE
 
-        elif not A.negative and B.negative:
-            # Make B positive
-            return A - (-B)
+        # Step 3: Pad integer parts with zeros to equal length
+        self_int, other_int = self._pad_parts(self.integer_part, other.integer_part, pad_left=True)
 
-        # If both are negative or both are positive, then we add them
-        # And give the result the same sign as the numbers
-        # First Add the fractional part
-        # We use the most basic algorithm for addition of two numbers
-        # The one we learned in school (add with carry)
-        F = []  # To Store the result of fractional part addition
-        carry = 0  # To store the carry
+        # Step 4: Add integer parts with carry
+        int_result: List[int] = []
+        for a, b in zip(reversed(self_int), reversed(other_int)):
+            total: int = a + b + carry
+            int_result.insert(0, total % BASE)
+            carry: int = total // BASE
 
-        # Loop until we cover all the fractional digits
-        while len(A_F) > 0:
-            # Get the (current) last digits of both numbers
-            a, b = A_F.pop(), B_F.pop()
+        # Step 5: Handle any remaining carry
+        if carry > 0:
+            # Handle the final carry that extends the integer part
+            # Carry >= 60
+            while carry >= BASE:
+                int_result.insert(0, carry % BASE)
+                carry //= BASE
+            int_result.insert(0, carry)
 
-            # Add them with the carry
-            Sum = a + b + carry
+        # Step 6: Normalize and create new instance
+        normalized_parts = Sexagesimal._normalize_parts(int_result, frac_result, self.is_negative)
+        return Sexagesimal._from_parts(normalized_parts)
 
-            # If the sum is greater than 60, then we have a carry
-            # While Initializing the Sexagesimal class, we made sure that fractional part has digits always less than 60
-            # Hence be sure that in any case, the sum will be less than 120
-            if Sum >= 60:
-                Sum -= 60
-                carry = 1
+    def _compare_magnitude(self, other: "Sexagesimal") -> int:
+        """
+        Compare the absolute values of two Sexagesimal numbers.
+
+        Summary:
+            Determine which of the two values has the greater magnitude by:
+              1. Comparing the lengths of the integer-part tuples (more digits => larger magnitude).
+              2. If equal length, comparing integer parts lexicographically.
+              3. If integer parts are equal, comparing fractional parts after right-padding them
+                 with zeros to equal length.
+
+        Args:
+            other (Sexagesimal): The Sexagesimal instance to compare against.
+
+        Returns:
+            int:
+                1   if |self| > |other|
+               -1   if |self| < |other|
+                0   if |self| == |other|
+
+        Notes:
+            - Fractional parts are padded on the right (least-significant side) before comparison.
+            - This method compares magnitudes only; callers must handle signs separately.
+        """
+        # Compare integer parts length
+        if len(self.integer_part) != len(other.integer_part):
+            return 1 if len(self.integer_part) > len(other.integer_part) else -1
+
+        # Compare integer parts lexicographically
+        if self.integer_part != other.integer_part:
+            return 1 if self.integer_part > other.integer_part else -1
+
+        # Pad fractional parts with zeros to equal length
+        self_frac, other_frac = self._pad_parts(self.fractional_part, other.fractional_part, pad_left=False)
+
+        if self_frac != other_frac:
+            return 1 if self_frac > other_frac else -1
+
+        return 0  # They are equal
+
+    @staticmethod
+    def _subtract_magnitude(larger_parts: _SexagesimalParts, smaller_parts: _SexagesimalParts) -> _SexagesimalParts:
+        """
+        Subtract the magnitude of two sexagesimal parts (assumes |larger| >= |smaller|).
+
+        Summary:
+            Perform a base-60 digit-wise subtraction of `smaller_parts` from `larger_parts`.
+            The algorithm:
+              - right-pads fractional parts to equal length and subtracts from least-significant
+                fractional digit to most-significant, propagating borrows as needed;
+              - left-pads integer parts to equal length and subtracts with any remaining borrow;
+              - returns a normalized, immutable _SexagesimalParts with a non-negative sign
+                (caller is responsible for assigning the correct sign if needed).
+
+        Args:
+            larger_parts (_SexagesimalParts): Normalized parts representing the minuend; must
+                have magnitude greater than or equal to `smaller_parts`.
+            smaller_parts (_SexagesimalParts): Normalized parts representing the subtrahend.
+
+        Returns:
+            _SexagesimalParts: A normalized, immutable parts container for the difference.
+                The returned `is_negative` is always False (magnitude subtraction only).
+
+        Notes:
+            - Inputs are expected to be normalized (no leading integer zeros or trailing fractional zeros).
+            - Fractional parts are padded on the right (LSB side); integer parts are padded on the left (MSB side).
+            - Borrow propagation may affect multiple fractional and integer places.
+        """
+
+        # Pad fractional parts with zeros to equal length
+        larger_frac, smaller_frac = Sexagesimal._pad_parts(
+            larger_parts.fractional_part, smaller_parts.fractional_part, pad_left=False
+        )
+
+        # List for mutability
+        larger_frac = list(larger_frac)
+        smaller_frac = list(smaller_frac)
+
+        result_frac_list: List[int] = []
+        borrow: int = 0
+
+        # Subtract fractional parts with borrow
+        for a, b in zip(reversed(larger_frac), reversed(smaller_frac)):
+            val = a - b - borrow
+            if val < 0:
+                val += BASE
+                borrow = 1
             else:
-                carry = 0
+                borrow = 0
 
-            F = [f"{Sum:0>2}"] + F
+            result_frac_list.insert(0, val)
 
-        # Same for the degrees part
-        D = []
+        # Pad integer parts with zeros to equal length
+        larger_int, smaller_int = Sexagesimal._pad_parts(
+            larger_parts.integer_part, smaller_parts.integer_part, pad_left=True
+        )
+        larger_int = list(larger_int)
+        smaller_int = list(smaller_int)
 
-        # Loop until we cover all the degree digits
-        while len(A_D) > 0:
-            # Get the (current) last digits of both numbers
-            a, b = A_D.pop(), B_D.pop()
-
-            # Add them with the carry
-            Sum = a + b + carry
-
-            # If the sum is greater than 60, then we have a carry
-            if Sum >= 60:
-                Sum -= 60
-                carry = 1
+        result_int_list: List[int] = []
+        # Subtract integer parts with borrow
+        for a, b in zip(reversed(larger_int), reversed(smaller_int)):
+            val = a - b - borrow
+            if val < 0:
+                val += BASE
+                borrow = 1
             else:
-                carry = 0
+                borrow = 0
 
-            D = [f"{Sum:0>2}"] + D
+            result_int_list.insert(0, val)
 
-        # Join the lists to get the final result
-        D = ",".join(D)
-        F = ",".join(F)
-        S = ";".join([D, F])
-
-        # Finally decide the sign of the result
-        if A.negative and B.negative:
-            S = "-" + S
-
-        return Sexagesimal(S)
+        # Return the normalized parts
+        return Sexagesimal._normalize_parts(result_int_list, result_frac_list, False)
 
     # The Subtraction of two Sexagesimal Numbers
-    def __sub__(self, B: "Sexagesimal") -> "Sexagesimal":
-        # Get the terms (Don't want to accidentally change the original numbers)
-        A = copy(self)
-        B = copy(B)
+    def __sub__(self, other: "Sexagesimal") -> "Sexagesimal":
+        if not isinstance(other, Sexagesimal):
+            return NotImplemented
 
-        # If one of the numbers is negative and other is positive
-        # Then it is same as adding two positive numbers (with answer having the sign of the bigger number)
-        if (A.negative and not B.negative) or (B.negative and not A.negative):
-            return A + (-B)
+        # Handle signs
+        if self.is_negative and not other.is_negative:
+            # i.e (-A) - B ==> -(A + B)
+            return -((-self) + other)
 
-        # If both are positive, then we subtract them as positive numbers
-        # And give the result the same sign as the numbers
-        # Start with the fractional part
-        # We use the most basic algorithm for subtraction of two numbers
-        # Subtract the smaller number from the bigger number
-        if not A.negative and not B.negative:
-            # Make them equal lengths
-            A1, B1 = self.makeEqualLen(A, B)
+        elif not self.is_negative and other.is_negative:
+            # i.e A - (-B) ==> A + B
+            return self + (-other)
 
-            # Separate the Integer and the fraction part
-            A_D, A_F = A1.split(";")
-            B_D, B_F = B1.split(";")
+        elif self.is_negative and other.is_negative:
+            # i.e (-A) - (-B) ==> B - A
+            return (-other) - (-self)
 
-            # Convert String to List
-            A_D = self.input2List(A_D)
-            A_F = self.input2List(A_F)
-            B_D = self.input2List(B_D)
-            B_F = self.input2List(B_F)
+        # Now both are positive numbers
+        comparison: int = self._compare_magnitude(other)
 
-            if A > B:
-                return self.subtraction_with_borrow(A_D, A_F, B_D, B_F)
-            else:
-                return self.subtraction_with_borrow(B_D, B_F, A_D, A_F)
+        if comparison >= 0:
+            result_parts = Sexagesimal._subtract_magnitude(self._parts, other._parts)
 
-        # Finally if nothing of the above, then both are negative
-        # Then it same as addition of two numbers we negative sign to the result
-        return A + (-B)
+        else:
+            result_parts = Sexagesimal._subtract_magnitude(other._parts, self._parts)
+            # Result will be negative
+            result_parts = _SexagesimalParts(
+                is_negative=True, integer_part=result_parts.integer_part, fractional_part=result_parts.fractional_part
+            )
+
+        return Sexagesimal._from_parts(result_parts)
+
+    @staticmethod
+    def _add_magnitude(a_parts: List[int], b_parts: List[int]) -> List[int]:
+        """
+        Add two sequences of base-60 digits and return the summed digit list.
+
+        Summary:
+            Perform digit-wise addition of two lists representing contiguous base-60
+            digits (most-significant first). The shorter input is left-padded with
+            zeros for alignment, addition proceeds from least-significant to
+            most-significant with carry propagation, and any final carry is expanded
+            into additional high-order digits.
+
+        Args:
+            a_parts (List[int]): First sequence of base-60 digits (MSB first).
+            b_parts (List[int]): Second sequence of base-60 digits (MSB first).
+
+        Returns:
+            List[int]: Resulting sequence of base-60 digits (MSB first). The result
+                may be longer than either input if carries produce new high-order digits.
+
+        Notes:
+            - Inputs are treated immutably; this function builds and returns new lists.
+            - Designed for internal use when adding combined integer+fractional digit arrays.
+        """
+
+        # Ensure both lists are of equal length
+        length_diff = len(a_parts) - len(b_parts)
+        if length_diff > 0:
+            b_parts = [0] * length_diff + b_parts
+        elif length_diff < 0:
+            a_parts = [0] * (-length_diff) + a_parts
+
+        result: List[int] = []
+        carry: int = 0
+
+        for a, b in zip(reversed(a_parts), reversed(b_parts)):
+            total = a + b + carry
+            result.insert(0, total % BASE)
+            carry = total // BASE
+
+        if carry > 0:
+            while carry >= BASE:
+                result.insert(0, carry % BASE)
+                carry //= BASE
+            result.insert(0, carry)
+
+        return result
+
+    @staticmethod
+    def _multiply_parts(a_parts: _SexagesimalParts, b_parts: _SexagesimalParts) -> _SexagesimalParts:
+        """
+        Multiply two normalized sexagesimal parts using long multiplication.
+
+        Summary:
+            Perform long multiplication treating the concatenated integer+fractional
+            digit sequences of each operand as contiguous base-60 digits (MSB first).
+            - Combine integer and fractional parts into full digit arrays.
+            - Multiply a_full by each digit of b_full (right-to-left), producing
+              intermediate products with appropriate shifts.
+            - Accumulate intermediate products using _add_magnitude.
+            - Re-split the accumulated result into integer and fractional parts
+              according to the total fractional place count.
+            - Normalize the result and set the sign to the XOR of the input signs.
+
+        Args:
+            a_parts (_SexagesimalParts): Normalized parts of multiplicand.
+            b_parts (_SexagesimalParts): Normalized parts of multiplier.
+
+        Returns:
+            _SexagesimalParts: Normalized parts for the product. Fractional length
+            equals sum of input fractional lengths; returned parts are normalized
+            (no extraneous leading/trailing zeros) and is_negative reflects the
+            XOR of the input signs.
+
+        Notes:
+            - Inputs are expected normalized (no leading integer zeros, no trailing fractional zeros).
+            - Uses BASE (60) arithmetic and the helper _add_magnitude for accumulation.
+            - Intermediate carries may increase the length of the result; final
+              normalization ensures canonical representation.
+        """
+
+        # Step 1: Combine integer and fractional parts into single lists
+        a_full = list(a_parts.integer_part) + list(a_parts.fractional_part)
+        b_full = list(b_parts.integer_part) + list(b_parts.fractional_part)
+
+        # Step 2: Total number of fractional places in the result
+        total_frac_places = len(a_parts.fractional_part) + len(b_parts.fractional_part)
+
+        # ------------------------ Perform Long Multiplication ----------------------- #
+        # We will accumulate results of multiplying `a_full` by each digit of `b_full`
+        result_full = []
+
+        # Step 3: Iteratre over each digit in b_full from right to left
+        for idx, b_digit in enumerate(reversed(b_full)):
+            intermediate_product: List[int] = []
+            carry: int = 0
+
+            # Step 3a: Multiply a_full by the current digit of b_full
+            for a_digit in reversed(a_full):
+                product = a_digit * b_digit + carry
+                intermediate_product.insert(0, product % BASE)
+                carry = product // BASE
+
+            # Step 3b: Handle any remaining carry
+            if carry > 0:
+                while carry >= BASE:
+                    intermediate_product.insert(0, carry % BASE)
+                    carry //= BASE
+                intermediate_product.insert(0, carry)
+
+            # Step 3c: Shift the intermediate product according to its position
+            # This is equivalent to multiplying by BASE**idx
+            # We can achieve this by appending `idx` zeros at the end
+            shifted_intermediate_product: List[int] = intermediate_product + [0] * idx
+
+            # Step 3d: Add the shifted intermediate product to our running total
+            result_full = Sexagesimal._add_magnitude(result_full, shifted_intermediate_product)
+
+        # Step 4: Split the result into integer and fractional parts
+        if total_frac_places > 0:
+            int_part = result_full[:-total_frac_places] if len(result_full) > total_frac_places else [0]
+            frac_part = result_full[-total_frac_places:]
+
+        else:
+            int_part = result_full
+            frac_part = [0]
+
+        # Step 5: Normalize and return the result parts
+        return Sexagesimal._normalize_parts(int_part, frac_part, a_parts.is_negative ^ b_parts.is_negative)
 
     # The Multiplication of two Sexagesimal Numbers
-    def __mul__(self, B: "Sexagesimal") -> "Sexagesimal":
-        # Use the Multiplication Algorithm with default parameters
-        return self.Multiplication(self, B)
+    def __mul__(self, other: "Sexagesimal") -> "Sexagesimal":
+        if not isinstance(other, Sexagesimal):
+            return NotImplemented
+
+        # Use the Multiplication Algorithm
+        return Sexagesimal._from_parts(Sexagesimal._multiply_parts(self._parts, other._parts))
+
+    def _to_rational(self) -> Rational:
+        """
+        Convert the internal sexagesimal representation to an exact sympy.Rational.
+
+        Summary:
+            Build an exact Rational by summing the integer-place digits weighted by
+            BASE**k (k = 0,1,2,...) and the fractional-place digits as digit/BASE**k
+            (k = 1,2,...). The sign of the result matches the instance sign; zero is
+            returned as a non-negative Rational.
+
+        Args:
+            self (Sexagesimal): The Sexagesimal instance to convert.
+
+        Returns:
+            Rational: Exact rational value equivalent to this sexagesimal number.
+
+        Notes:
+            - Uses sympy.Rational for exact fractional arithmetic.
+            - Integer and fractional contributions are accumulated separately.
+            - The implementation preserves exactness (no floating-point rounding).
+        """
+
+        total = Rational(0)
+
+        # Sum of integer digits
+        for idx, digit in enumerate(reversed(self.integer_part)):
+            total += digit * pow(BASE, idx)  # type: ignore
+
+        # Sum of fractional digits
+        for idx, digit in enumerate(self.fractional_part, start=1):
+            total += Rational(digit, pow(BASE, idx))  # type: ignore
+
+        return -total if self.is_negative else total  # type: ignore
+
+    @staticmethod
+    def _rational_to_sexagesimal_parts(num: Rational, max_frac_places: int = 80) -> _SexagesimalParts:
+        """
+        Convert a sympy.Rational to normalized sexagesimal parts.
+
+        Summary:
+            Produce a canonical _SexagesimalParts representation for the given exact
+            Rational `num`. The function extracts the integer portion as base-60
+            digits and generates up to `max_frac_places` fractional base-60 digits
+            by repeatedly multiplying the fractional remainder by BASE. The result
+            is normalized (no extraneous leading integer zeros or trailing
+            fractional zeros) and preserves the sign of the input; zero is returned
+            using the canonical non-negative representation.
+
+        Args:
+            num (Rational): Exact rational value to convert.
+            max_frac_places (int, optional): Maximum number of fractional base-60
+                digits to produce. Conversion stops early if the fractional part
+                terminates. Defaults to 80.
+
+        Returns:
+            _SexagesimalParts: Immutable, normalized parts with fields:
+                - is_negative (bool)
+                - integer_part (Tuple[int, ...])
+                - fractional_part (Tuple[int, ...])
+
+        Notes:
+            - Uses exact Rational arithmetic; no floating-point rounding is used.
+            - If the sexagesimal expansion is non-terminating the result is a
+              truncated expansion of at most `max_frac_places` digits.
+            - Callers may increase `max_frac_places` to reduce truncation error.
+        """
+
+        if num == 0:
+            return _SexagesimalParts(is_negative=False, integer_part=(0,), fractional_part=(0,))
+
+        is_negative: bool = num < 0
+        abs_num: Rational = abs(num)
+
+        # Step 1: Calculate integer part and convert to base-<BASE> tuple
+        integer_val = int(abs_num)
+        integer_parts: List[int] = []
+
+        if integer_val == 0:
+            integer_parts.append(0)
+        else:
+            while integer_val > 0:
+                integer_parts.insert(0, integer_val % BASE)
+                integer_val //= BASE
+
+        # Step 2: Calculate fractional part, using remainder
+        remainder: Rational = abs_num - int(abs_num)  # type: ignore
+        fractional_parts: List[int] = []
+
+        for _ in range(max_frac_places):
+            remainder *= BASE  # type: ignore
+            frac_digit = int(remainder)
+            fractional_parts.append(frac_digit)
+            remainder -= frac_digit  # type: ignore
+
+            if remainder == 0:
+                break
+
+        return Sexagesimal._normalize_parts(integer_parts, fractional_parts, is_negative)
 
     # The Division of two Sexagesimal Numbers
-    def __truediv__(self, B: "Sexagesimal") -> "Sexagesimal":
-        # Use the Division Algorithm with default parameters
-        return self.Division(self, B)
+    def __truediv__(self, other: "Sexagesimal") -> "Sexagesimal":
+        if not isinstance(other, Sexagesimal):
+            return NotImplemented
+
+        # Step 1: Handle division by zero
+        if other == Sexagesimal(0):
+            raise ZeroDivisionError("Division by zero is not allowed.")
+
+        # Step 2: Convert both numbers to Rational
+        self_rational: Rational = self._to_rational()
+        other_rational: Rational = other._to_rational()
+
+        # Step 3: Perform division in Rational
+        result_rational: Rational = self_rational / other_rational  # type: ignore
+
+        # Step 4: Convert the result back to (normalized) Sexagesimal parts
+        result_parts: _SexagesimalParts = Sexagesimal._rational_to_sexagesimal_parts(result_rational)
+
+        return Sexagesimal._from_parts(result_parts)
 
     # Negation (For Unary Minus)
     def __neg__(self) -> "Sexagesimal":
-        # Don't accidentally change the original number
-        A = copy(self)
-        A.negative = not A.negative
+        if self == Sexagesimal(0):
+            return self
 
-        return A
+        return Sexagesimal._from_parts(
+            _SexagesimalParts(
+                is_negative=not self._parts.is_negative,
+                integer_part=self._parts.integer_part,
+                fractional_part=self._parts.fractional_part,
+            )
+        )
 
     # For Unary Plus
     def __pos__(self) -> "Sexagesimal":
         # Again, don't return the original number
-        return copy(self)
+        return self
 
     # Absolute Value
     def __abs__(self) -> "Sexagesimal":
-        # Don't return the original number
-        A = copy(self)
-
-        # Set the negative flag to False
-        A.negative = False
-
-        return A
+        return Sexagesimal._from_parts(
+            _SexagesimalParts(
+                is_negative=False,
+                integer_part=self._parts.integer_part,
+                fractional_part=self._parts.fractional_part,
+            )
+        )
 
     # The Power of a Sexagesimal Number
     def __pow__(self, n: int) -> "Sexagesimal":
-        # Don't return the original number
-        A = copy(self)
+        """
+        __pow__ Calculates the power of a Sexagesimal number to an integer exponent.
 
-        # If the power is negative, then we raise the reciprocal to the power
+        This method supports positive, negative, and zero integer exponents,
+        leveraging the existing multiplication and division methods of the class.
+
+        - For positive exponents, it uses repeated multiplication.
+        - For a zero exponent, it returns 1 (Sexagesimal('01;00')).
+        - For negative exponents, it calculates the reciprocal of the positive power.
+
+        Args:
+            exponent (int): The integer exponent to raise the number to.
+
+        Returns:
+            Sexagesimal: The result of the power operation.
+
+        Raises:
+            TypeError: If the exponent is not an integer.
+            ZeroDivisionError: If the base is zero and the exponent is negative.
+        """
+
+        if not isinstance(n, int):
+            raise TypeError("Exponent must be an integer.")
+
+        if n == 0:
+            return Sexagesimal(1)  # Any number to the power of 0 is 1
+
         if n < 0:
-            A = 1 / A
-            n = -n
+            if self == Sexagesimal(0):
+                raise ZeroDivisionError("0 cannot be raised to a negative power.")
 
-        # Perform repeated multiplication
-        for _ in range(n - 1):
-            A *= A
+            return Sexagesimal(1) / (self**-n)
 
-        return A
+        # Start with the identity element for multiplication
+        result = Sexagesimal(1)
+        base = self
+
+        while n > 0:
+            if n % 2 == 1:
+                result *= base
+            base *= base
+            n //= 2
+
+        return result
 
     # Iterative Addition
-    def __iadd__(self, B: "Sexagesimal") -> "Sexagesimal":
+    def __iadd__(self, other: "Sexagesimal") -> "Sexagesimal":
         # Use the Addition Algorithm
-        return self + B
+        return self + other
 
     # Iterative Subtraction
-    def __isub__(self, B: "Sexagesimal") -> "Sexagesimal":
+    def __isub__(self, other: "Sexagesimal") -> "Sexagesimal":
         # Use the Subtraction Algorithm
-        return self - B
+        return self - other
 
     # Iterative Multiplication
-    def __imul__(self, B: "Sexagesimal") -> "Sexagesimal":
+    def __imul__(self, other: "Sexagesimal") -> "Sexagesimal":
         # Use the Multiplication Algorithm
-        return self * B
+        return self * other
 
     # Greater Than
-    def __gt__(self, B: "Sexagesimal") -> bool:
-        # Get the terms (Don't want to accidentally change the original numbers)
-        A = copy(self)
-        B = copy(B)
+    def __gt__(self, other: "Sexagesimal") -> bool:
+        if not isinstance(other, Sexagesimal):
+            return NotImplemented
 
-        # If one of the numbers is negative and other is greater
-        if A.negative and not B.negative:
-            return False
-
-        if not A.negative and B.negative:
+        if not self.is_negative and other.is_negative:
             return True
 
-        if A.negative and B.negative:
-            return -A < -B  # <==> A > B
+        if self.is_negative and not other.is_negative:
+            return False
 
-        # Make them equal lengths
-        A, B = self.makeEqualLen(A, B)
-        A_D, A_F = A.split(";")
-        B_D, B_F = B.split(";")
+        if self.is_negative and other.is_negative:
+            return -self < -other  # <==> self > other
 
-        for i in range(len(A_D)):
-            if A_D[i] > B_D[i]:
-                return True
-
-            if B_D[i] > A_D[i]:
-                return False
-
-        for i in range(len(A_F)):
-            if A_F[i] > B_F[i]:
-                return True
-
-            if B_F[i] > A_F[i]:
-                return False
-
-        # If equal then return False
-        return False
+        # Now both are positive numbers
+        comparison: int = self._compare_magnitude(other)
+        return comparison > 0
 
     # Less Than
-    def __lt__(self, B: "Sexagesimal") -> bool:
-        # Get the terms (Don't want to accidentally change the original numbers)
-        A = copy(self)
-        B = copy(B)
+    def __lt__(self, other: "Sexagesimal") -> bool:
+        if not isinstance(other, Sexagesimal):
+            return NotImplemented
 
-        # If one of the numbers is negative and other is greater
-        if A.negative and not B.negative:
-            return True
-
-        if not A.negative and B.negative:
+        if not self.is_negative and other.is_negative:
             return False
 
-        if A.negative and B.negative:
-            return -A > -B  # <==> A < B
+        if self.is_negative and not other.is_negative:
+            return True
 
-        # Make them equal lengths
-        A, B = self.makeEqualLen(A, B)
+        if self.is_negative and other.is_negative:
+            return -self > -other  # <==> self > other
 
-        A_D, A_F = A.split(";")
-        B_D, B_F = B.split(";")
-
-        for i in range(len(A_D)):
-            if A_D[i] < B_D[i]:
-                return True
-
-            if B_D[i] < A_D[i]:
-                return False
-
-        for i in range(len(A_F)):
-            if A_F[i] < B_F[i]:
-                return True
-
-            if B_F[i] < A_F[i]:
-                return False
-
-        # If equal then return False
-        return False
+        # Now both are positive numbers
+        comparison: int = self._compare_magnitude(other)
+        return comparison < 0
 
     # Equal To
-    def __eq__(self, B: "Sexagesimal") -> bool:
-        # return not (self < B or self > B)
-        return (self.negative == B.negative) and (self.S == B.S)
+    def __eq__(self, other: object) -> bool:
+        # Ensure other is a Sexagesimal instance before comparing
+        if not isinstance(other, Sexagesimal):
+            return NotImplemented
+
+        return self._parts == other._parts
 
     # Not Equal To
-    def __ne__(self, B: "Sexagesimal") -> bool:
-        return not self == B
+    def __ne__(self, other: object) -> bool:
+        # Ensure other is a Sexagesimal instance before comparing
+        if not isinstance(other, Sexagesimal):
+            return NotImplemented
+
+        return not self == other
 
     # Greater Than or Equal To
-    def __ge__(self, B: "Sexagesimal") -> bool:
-        return self > B or self == B
+    def __ge__(self, other: "Sexagesimal") -> bool:
+        return self > other or self == other
 
     # Less Than or Equal To
-    def __le__(self, B: "Sexagesimal") -> bool:
-        return self < B or self == B
+    def __le__(self, other: "Sexagesimal") -> bool:
+        return self < other or self == other
 
-    # Copy Function
-    def __copy__(self) -> "Sexagesimal":
-        num = Sexagesimal(self.S)
-        num.negative = self.negative
-        return num
+    def to_decimal(self, precision: int = 50) -> Decimal:
+        """
+        Convert the Sexagesimal number to a high-precision Decimal.
 
-    # Custom Split function for our Sexagesimal class
-    def split(self, sep: str = " ") -> list:
-        # Split the string
-        return self.S.split(sep)
+        Summary:
+            Produce a Decimal representation of this sexagesimal value by
+            summing integer-place digits weighted by BASE**k (k = 0,1,2,...)
+            and fractional-place digits as digit/BASE**k (k = 1,2,...). The
+            global Decimal context precision is set to `precision` for the
+            duration of the computation.
 
-    # Perform Subtraction with borrow method
-    def subtraction_with_borrow(self, greater_D, greater_F, lesser_D, lesser_F):
-        # Start with the fractional part
-        # We use the most basic algorithm for subtraction of two numbers
-        # Subtract the smaller number from the bigger number
-        F = []  # To Store the result of fractional part addition
-        while len(greater_F) > 0:
-            a, b = greater_F.pop(), lesser_F.pop()
+        Args:
+            precision (int, optional): Number of significant digits to use in
+                the Decimal context (getcontext().prec). Must be a positive
+                integer. Defaults to 50.
 
-            if a < b:
-                # If no fractional part is left, then we borrow from the Degrees part
-                try:
-                    greater_F[-1] -= 1
-                except IndexError:
-                    greater_D[-1] -= 1
+        Returns:
+            Decimal: A Decimal equal to the numeric value of this Sexagesimal.
+                The returned Decimal carries the same sign as the instance;
+                canonical zero is returned as a non-negative Decimal.
 
-                a += 60
+        Notes:
+            - This function mutates the module Decimal context via getcontext().prec.
+              Callers that rely on a different global Decimal precision should
+              restore it after calling this method if necessary.
+            - All accumulation uses Decimal arithmetic to avoid floating-point
+              rounding; the result is as exact as allowed by the requested precision.
+        """
 
-            Diff = (
-                a - b
-            )  # Rest assured that the difference will never be greater than 59
+        # Set the precision for Decimal operations
+        getcontext().prec = precision
 
-            # Add the difference to the result list
-            F = [f"{Diff:0>2}"] + F
+        total = Decimal(0)
 
-        # Same for Degrees part
-        D = []
-        while len(greater_D) > 0:
-            a, b = greater_D.pop(), lesser_D.pop()
+        # Sum of integer digits
+        for idx, digit in enumerate(reversed(self.integer_part)):
+            total += Decimal(digit) * (Decimal(BASE) ** idx)
 
-            # Borrow if required
-            if a < b:
-                greater_D[-1] -= 1
-                a += 60
+        # Sum of fractional digits
+        for idx, digit in enumerate(self.fractional_part, start=1):
+            total += Decimal(digit) / (Decimal(BASE) ** idx)
 
-            Diff = a - b
-
-            D = [f"{Diff:0>2}"] + D
-
-        # Join and return the result
-        D = ",".join(D)
-        F = ",".join(F)
-        return Sexagesimal("-" + ";".join([D, F]))
-
-    ## Helper functions  ##
-    # Process negative numbers
-    def process_negative(self, S: str) -> str:
-        # If it is negative set negative as True and remove the negative sign
-        if S[0] == "-":
-            self.negative = True
-            S = S[1:]
-
-        else:
-            self.negative = False
-
-        return S
-
-    # Check if number is decimal and convert to sexagesimal
-    def check_and_convert_decimal(self, S: str) -> str:
-        # If the number is decimal, convert to sexagesimal
-        # Here we check if its is Sexagesimal (contains a ";")
-        # If not sexagsimal, then it is considered decimal
-        if ";" not in S:
-            S = (self.Decimal2Sexagesimal(S, 20 + len(S))).S
-
-        return S
-
-    # Check if S is a valid sexagesimal number
-    def is_valid_sexagesimal(self, S: str) -> bool:
-        # Split into Degrees and Fraction
-        Degrees, Fractions = S.split(";")
-
-        # If Degree has a "," then split it into a list
-        Deg = Degrees.split(",") if "," in Degrees else [Degrees]
-
-        # If Deg is only one element, then it is considered to be a decimal
-        # Hence convert that to base 60
-        if len(Deg) == 1:
-            N = int(Deg.pop(0))
-            while N > 59:
-                R = N % 60
-                N = N // 60
-                Deg = [f"{R:0>2}"] + Deg
-
-            Deg = [f"{N:0>2}"] + Deg
-
-        #  If not, then check if all the elements are less than 60
-        else:
-            for i in Deg:
-                if int(i) >= 60:
-                    return False, ValueError(
-                        "Invalid Sexagesimal Number: Degrees Part has a value greater than 60"
-                    )
-
-        # Similarly for Fractions
-        Frac = Fractions.split(",") if "," in Fractions else [Fractions]
-
-        # Check if all the elements are less than 60
-        for i in Frac:
-            if int(i) >= 60:
-                return False, ValueError(
-                    "Invalid Sexagesimal Number: Fraction Part has a value greater than 60"
-                )
-
-        return True, None
-
-    # Standardize the Sexagesimal Number
-    def Standardize(self, S: str) -> str:
-        # Split the Sexagesimal Number into Degrees and Fractions
-        Degrees, Fractions = S.split(";")
-
-        # If Degree has a "," then split it into a list
-        Deg = Degrees.split(",") if "," in Degrees else [Degrees]
-
-        # Similarly for Fractions
-        Frac = Fractions.split(",") if "," in Fractions else [Fractions]
-
-        # Join the Degrees and Fractions
-        value = ";".join(
-            [
-                ",".join([f"{d.strip():0>2}" for d in Deg]),
-                ",".join([f"{f.strip():0>2}" for f in Frac]),
-            ]
-        )
-
-        # Remove sign from zero
-        value = value.replace("-00", "00")
-
-        return value
-
-    # Convert the given Degree or Fractional part to list
-    def input2List(self, Input: str) -> List[str]:
-        # Split the String and Convert each element to positive integer
-        return [abs(int(x)) for x in Input.split(",")]
-
-    # Make the degree and fractional parts of the two numbers equal length (string length for ease of use)
-    def makeEqualLen(
-        self, A: "Sexagesimal", B: "Sexagesimal"
-    ) -> Tuple["Sexagesimal", "Sexagesimal"]:
-        # Split the Sexagesimal Numbers into Degrees and Fractions
-        A = str(A).split(";")
-        B = str(B).split(";")
-
-        # Split the Degrees and Fractions into lists
-        A_D, A_F = A[0].split(","), A[1].split(",")
-        B_D, B_F = B[0].split(","), B[1].split(",")
-
-        # Compare lengths and add "00" to the shorter list
-        if len(A_D) < len(B_D):
-            m = len(B_D) - len(A_D)
-            A_D = m * ["00"] + A_D
-        else:
-            m = len(A_D) - len(B_D)
-            B_D = m * ["00"] + B_D
-
-        if len(A_F) < len(B_F):
-            m = len(B_F) - len(A_F)
-            A_F += m * ["00"]
-        else:
-            m = len(A_F) - len(B_F)
-            B_F += m * ["00"]
-
-        # Join the lists
-        A_D = ",".join(A_D)
-        A_F = ",".join(A_F)
-        B_D = ",".join(B_D)
-        B_F = ",".join(B_F)
-
-        # Join the Degrees and Fractions
-        A = ";".join([A_D, A_F])
-        B = ";".join([B_D, B_F])
-
-        return A, B
-
-    # Convert the Degrees (Base 60 Formate) to Decimal
-    def Degrees2Decimal(Input: "Sexagesimal") -> str:
-        A_D, A_F = Input.split(";")
-        A_D = A_D.split(",")
-
-        Dec = 0
-        for i in range(len(A_D)):
-            Dec += int(A_D[-(i + 1)]) * (60**i)
-
-        return f"{Dec};{A_F}"
+        return -total if self.is_negative else total
 
     # Round off the given Sexagesimal Number to the given precision
-    @staticmethod
-    def RoundOff(Number: Union["Sexagesimal", str], precision: int) -> "Sexagesimal":
+    def round(self, precision: int = 0) -> "Sexagesimal":
+        """
+        Round the sexagesimal number to the specified fractional-place precision.
+
+        Summary:
+            Truncate the fractional part to `precision` base-60 places and perform
+            round-half-up based on the next (precision-th) fractional digit
+            (round up when that digit >= BASE//2). Carries produced by rounding
+            propagate through fractional places into the integer places as needed,
+            and the final result is normalized. Zero is canonicalized as
+            non-negative.
+
+        Args:
+            precision (int, optional): Number of fractional base-60 places to keep.
+                0 means rounding to the integer part. Must be a non-negative integer.
+                Defaults to 0.
+
+        Raises:
+            TypeError: If `precision` is not an int.
+            ValueError: If `precision` is negative.
+
+        Returns:
+            Sexagesimal: A new Sexagesimal instance rounded to the requested precision.
+
+        Notes:
+            - If `precision` is greater than or equal to the current fractional
+              length, the original instance is returned (no change).
+            - Carry propagation may extend the integer part (creating a new high-order
+              digit) and normalization removes any extraneous zeros.
+        """
+
+        if not isinstance(precision, int):
+            raise TypeError("Precision must be an integer.")
+
         if precision < 0:
-            return Number
+            raise ValueError("Precision must be a non-negative integer.")
 
-        try:
-            D, F = Number.split(";")
-        except AttributeError:  # If Number is not a Sexagesimal Number, just a string
-            D, F = Number.split(";")
+        if precision >= len(self.fractional_part):
+            return self  # No rounding needed
 
-        F = F.split(",")
+        # Determine if we need to round up
+        round_up: bool = self.fractional_part[precision] >= (BASE // 2)
 
-        if len(F) <= precision:
-            return Number
+        # Truncate the fractional part
+        new_frac_list: list[int] = list(self.fractional_part[:precision])
 
-        carry = 0
-        if int(F[precision]) > 29:
-            F[precision - 1] = f"{int(F[precision - 1]) + 1:0>2}"
-            F = F[:precision]
+        if not round_up:
+            # No rounding up needed
+            new_parts = Sexagesimal._normalize_parts(list(self.integer_part), new_frac_list, self.is_negative)
+            return Sexagesimal._from_parts(new_parts)
 
-            if precision == 0:
-                carry = 1
-
+        # ------------------------- Handling the rounding up ------------------------- #
+        if not new_frac_list:  # Rounding to integer part
+            carry = 1
         else:
-            F = F[:precision]
+            new_frac_list[-1] += 1
+            carry = 0
 
-        D = D.split(",")
-        if carry == 1:
-            D[-1] = f"{int(D[-1]) + 1:0>2}"
-
-        while True:
-            if "60" in D:
-                D = D[::-1]
-                i = D.index("60")
-                D[i] = "00"
-                D[i + 1] = f"{int(D[i + 1]) + 1:0>2}"
-                D = D[::-1]
+        # Propagate carry in fractional part
+        for idx, val in reversed(list(enumerate(new_frac_list))):
+            val += carry
+            if val >= BASE:
+                new_frac_list[idx] = val % BASE
+                carry = val // BASE
             else:
+                new_frac_list[idx] = val
+                carry = 0
                 break
 
-        Number = Sexagesimal(f"{','.join(D)};{','.join(F)}")
+        # If there's still a carry, propagate it to the integer part
+        new_int_list = list(self.integer_part)
 
-        if "60" in Number.S:
-            return Sexagesimal.RoundOff(Number, precision - 1)
-        else:
-            return Number
+        if carry > 0:
+            new_int_list[-1] += carry
+            for idx in range(len(new_int_list) - 1, -1, -1):
+                if new_int_list[idx] < BASE:
+                    carry = 0
+                    break
 
-    # Get the reciprocal of the given Sexagesimal Number, upto the given precision (if non-terminating)
-    @staticmethod
-    def getReciprocal(N: int, precision: int = 99):
-        if precision < 99:
-            precision = 99
+                carry = new_int_list[idx] // BASE
+                new_int_list[idx] = new_int_list[idx] % BASE
 
-        Sexa = []
-        Recur = ""
-        Dividend = 1
-        pairs = dict()
-        flag = False
+                if idx > 0:
+                    new_int_list[idx - 1] += carry
+                else:
+                    new_int_list.insert(0, carry)
 
-        while Dividend != 0:
-            if N > Dividend:
-                Sexa.append("00")
-                Dividend *= 60
-                continue
-
-            # Dividend *= 60
-            Quo = Dividend // N
-            Rem = Dividend % N
-
-            Quo = f"{Quo:0>2}"
-
-            if Quo in pairs and Rem in pairs[Quo] and flag is False:
-                Recur = Sexa[::-1]
-                i = Recur.index(Quo)
-                Recur[i] = "(" + Recur[i]
-                Recur[0] += ")"
-                Recur.reverse()
-                flag = True
-                Recur = f"{Recur[0]};{','.join(Recur[1:])}"
-
-            if Quo not in pairs:
-                pairs[Quo] = [Rem]
-            elif Rem not in pairs[Quo]:
-                pairs[Quo].append(Rem)
-
-            Sexa.append(f"{Quo:0>2}")
-            Dividend = Rem
-
-            Dividend *= 60
-            if len(Sexa) > precision:
-                flag = True
-                break
-
-        if len(Sexa) == 1:
-            Sexa.append("00")
-
-        if flag:
-            return (f"{Sexa[0]};{','.join(Sexa[1:])}", Recur, flag)
-        else:
-            return (Sexagesimal(f"{Sexa[0]};{','.join(Sexa[1:])}"), Recur, flag)
-
-    # Convert the given Sexagesimal Number to its Rational Form
-    @staticmethod
-    def getRationlForm(Number: Union["Sexagesimal", str]):
-        try:
-            Number: str = Number.S
-        except AttributeError:  # If Number is just a string, just pass it on
-            pass
-
-        D, F = Number.split(";")
-        D = D.split(",")
-        F = F.split(",")
-
-        F_R = []
-        for i in range(len(F)):
-            F_R.append(Rational(int(F[i]), int(pow(60, i + 1))))
-
-        D_R = []
-        for i in range(len(D)):
-            D_R.append(Rational(int(D[-(i + 1)]) * int(pow(60, i))))
-
-        R = D_R + F_R
-        return sum(R)
+        new_parts = Sexagesimal._normalize_parts(new_int_list, new_frac_list, self.is_negative)
+        return Sexagesimal._from_parts(new_parts)
 
     # Convert the given Decimal Number to Sexagesimal
     @staticmethod
-    def Decimal2Sexagesimal(
-        Input: Union[int, float, str], Accuracy: int = 20
-    ) -> "Sexagesimal":
-        Input = str(Input)
-        getcontext().prec = 100
+    def Decimal2Sexagesimal(value_str: str, accuracy: int = 80) -> str:
+        """
+        Converts a decimal number string into a sexagesimal string.
 
-        if "." not in Input:
-            Input += ".0"
+        This method is designed to be robust and can handle standard decimal
+        notation ("1.5") as well as scientific notation ("1.5e-2").
 
-        D, F = str(Input).split(".")
+        Args:
+            value_str (str): The string representation of the decimal number.
+            accuracy (int): The number of fractional places to compute.
 
-        if Accuracy <= len(F):
-            F = str(F[:Accuracy])
+        Returns:
+            str: A string in the canonical "integer;fractional" format,
+                e.g., "01;30".
+        """
+        try:
+            # Use Decimal for high precision and to handle scientific notation
+            getcontext().prec = accuracy + 20  # Set precision
+            num = Decimal(value_str)
+        except InvalidOperation:
+            raise ValueError(f"Could not parse '{value_str}' as a decimal number.")
 
-        # Convert the Integral part into sexagesimal
-        N = int(D)
-        D = []
-        while N > 59:
-            R = N % 60
-            N = N // 60
-            D = [f"{R:0>2}"] + D
-        D = [f"{N:0>2}"] + D
+        # Separate integer and fractional parts of the Decimal
+        integer_part = int(num.to_integral_value(rounding="ROUND_DOWN"))
+        fractional_part = num - Decimal(integer_part)
 
-        # Convert the Fractional part into sexagesimal
-        N = str(F)
-        F = []
+        # Convert integer part to a list of base-60 digits
+        int_places = []
+        if integer_part == 0:
+            int_places = [0]
+        else:
+            temp_int = abs(integer_part)
+            while temp_int > 0:
+                int_places.insert(0, temp_int % BASE)
+                temp_int //= BASE
 
-        while len(F) <= Accuracy:
-            try:
-                M = str(Decimal(N) * 60)
-                m = len(N) - len(M)
-                M = "0" * m + M
-            except InvalidOperation:  # if N == ''
-                N += "0"
-                continue
+        # Convert fractional part to a list of base-60 digits
+        frac_places = []
+        temp_frac = abs(fractional_part)
+        for _ in range(accuracy):
+            if temp_frac == 0:
+                break
+            temp_frac *= BASE
+            digit = int(temp_frac)
+            frac_places.append(digit)
+            temp_frac -= Decimal(digit)
 
-            k = len(M) - len(N)
+        # Format the lists into the final sexagesimal string
+        int_str = VAL_SEP.join(map(str, int_places)) if int_places else "0"
+        frac_str = VAL_SEP.join(map(str, frac_places)) if frac_places else "0"
 
-            R = M[:k]
-            N = M[k:]
-            if R == "":
-                R == "00"
-
-            F += [f"{R:0>2}"]
-
-        D = ",".join(D)
-        F = ",".join(F)
-
-        while F[-3:] == ",00":
-            F = F[:-3]
-
-        result = Sexagesimal(D + ";" + F)
-
-        return result
+        return f"{int_str}{PART_SEP}{frac_str}"
 
     # Convert the given Sexagesimal Number from Mod 60 (default form) to Mod N. Output is a string
     @staticmethod
@@ -727,67 +1117,6 @@ class Sexagesimal:
         D = N % mod
 
         return f"{D};{A_F}"
-
-    # Convert the Sexagesimal to a Decimal number
-    @staticmethod
-    def Sexagesimal2Decimal(Input: Union["Sexagesimal", str], precision: int = 20):
-        if isinstance(type(Input), type(Sexagesimal("1"))):
-            A = Input.S
-            if Input.negative:
-                minus = True
-            else:
-                minus = False
-        else:
-            A = Input.strip()
-            if A[0] == "-":
-                minus = True
-                A = A[1:]
-            else:
-                minus = False
-
-        if ";" not in A:
-            A = f"{A};00"
-
-        # Get the Decimal and Fractional Part
-        A_D, A_F = A.split(";")
-        A_D = A_D.split(",")
-        A_F = A_F.split(",")
-
-        try:
-            D = Decimal("0")
-            for i in range(len(A_D)):
-                D += Decimal(A_D[-(i + 1)]) * (60**i)
-
-            extra = len(str(D))
-            getcontext().prec = precision + extra
-
-            F = Decimal("0")
-            for i in range(len(A_F)):
-                F += Decimal(A_F[i]) / (60 ** (i + 1))
-
-            F = str(F)
-
-            for i in range(len(F)):
-                k = len(F) - i
-                if F[i:] == "".join(str(z) for z in [0] * k):
-                    F = "".join(list(F[:i]))
-
-                    if F.strip() == "":
-                        F = Decimal("0")
-                    else:
-                        F = Decimal(F)
-                    break
-
-            F = Decimal(F)
-
-            # N = str(D) + F[1:]
-            N = D + F
-            if minus:
-                return f"-{N}"
-            else:
-                return f"{N}"
-        except Exception as e:
-            print(e)
 
     # Multipling the two sexagesimal numbers
     @staticmethod
@@ -819,7 +1148,9 @@ class Sexagesimal:
         Details += f"\n\n\tA\t=\t{A}"
         Details += f"\n\tB\t=\t{B}"
 
-        Details += "\n\n\n\n**Step 1:** Break the Sexagesimal Numbers in their Intergral and Fractional Parts respectively."
+        Details += (
+            "\n\n\n\n**Step 1:** Break the Sexagesimal Numbers in their Intergral and Fractional Parts respectively."
+        )
         Details += f"\n\n\tIntegral part of A\t\t=\t{A_D}"
         Details += f"\n\tFractional part of A\t=\t{A_F}"
         Details += f"\n\n\tIntegral part of B\t\t=\t{B_D}"
@@ -1004,9 +1335,7 @@ class Sexagesimal:
 
         # Step 8: Give proper sign to the Result
         Details += "\n\n\n\n**Step 8:** Give proper sign to the Result"
-        if (A.negative is True and B.negative is False) or (
-            A.negative is False and B.negative is True
-        ):
+        if (A.negative is True and B.negative is False) or (A.negative is False and B.negative is True):
             Details += f"\n\n\t{A}  *  {B}  =  -{D};{F}\n\n"
             # return (Sexagesimal(f"-{D};{F}"), Details)
             result = Sexagesimal(f"-{D};{F}")
