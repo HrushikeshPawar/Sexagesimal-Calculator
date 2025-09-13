@@ -21,7 +21,6 @@ import pytest
     ],
 )
 def test_init(input_val, output_str):
-
     assert str(Sexagesimal(input_val)) == output_str
 
 
