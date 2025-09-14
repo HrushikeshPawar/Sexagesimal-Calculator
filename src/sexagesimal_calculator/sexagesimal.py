@@ -6,6 +6,8 @@ from typing import List, Tuple, Union
 
 from sympy import Rational
 
+from sexagesimal_calculator.exceptions import InvalidFormatError
+
 # Constants
 BASE = 60
 PART_SEP = ";"
@@ -111,14 +113,14 @@ class Sexagesimal:
             fractional_parts = [int(part) for part in fractional_str.split(VAL_SEP) if part]
 
         except (ValueError, IndexError):
-            raise ValueError("Invalid input format. Expected decimal or sexagesimal string.")
+            raise InvalidFormatError("Invalid input format. Expected decimal or sexagesimal string.")
 
         # Validate parts
         if any(part >= BASE for part in integer_parts):
-            raise ValueError(f"Integer Part has a value greater than {BASE}")
+            raise InvalidFormatError(f"Integer Part has a value greater than {BASE}")
 
         if any(part >= BASE for part in fractional_parts):
-            raise ValueError(f"Fraction Part has a value greater than {BASE}")
+            raise InvalidFormatError(f"Fraction Part has a value greater than {BASE}")
 
         # Step 5: Normalize the parts (remove leading/trailing zeros) and create a frozen dataclass
         self._parts = Sexagesimal._normalize_parts(integer_parts, fractional_parts, is_negative)
