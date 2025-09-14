@@ -97,7 +97,32 @@ class VerboseResult:
 
 
 def explain_multiplication(a: Sexagesimal, b: Sexagesimal) -> VerboseResult:
-    """Performs multiplication and returns a verbose, beautifully formatted explanation."""
+    """
+    Explain long multiplication of two sexagesimal values and produce a verbose narrative.
+
+    Summary:
+        Perform a pedagogical, step-by-step long multiplication of two Sexagesimal
+        instances. The explanation breaks each operand into integer and fractional
+        base-60 digits, computes intermediate row products (digit-by-digit with carries),
+        arranges a summation grid with proper shifts, reduces the accumulated digits
+        into integer and fractional parts, and reports the canonical normalized result.
+
+    Args:
+        a (Sexagesimal): Left multiplicand.
+        b (Sexagesimal): Right multiplicand.
+
+    Returns:
+        VerboseResult: A container with the canonical Sexagesimal product in `result`,
+            a short `title`, and a `steps` list combining ExplanationStep entries and
+            a CalculationGrid showing intermediate rows and the final column-wise sum.
+
+    Notes:
+        - The narrative includes decomposition, per-digit multiplication (with carry),
+          the shifted intermediate rows, column-wise summation and carry propagation,
+          splitting the full digit array into integer/fractional parts, and final normalization.
+        - The function uses the robust Sexagesimal.__mul__ implementation to produce
+          the authoritative final result after demonstrating the manual algorithm.
+    """
     title = f"Long Multiplication of {a} * {b}"
     steps: List[Union[ExplanationStep, CalculationGrid]] = []
 
@@ -192,7 +217,40 @@ def explain_multiplication(a: Sexagesimal, b: Sexagesimal) -> VerboseResult:
 
 
 def explain_addition(a: Sexagesimal, b: Sexagesimal) -> VerboseResult:
-    """Performs addition and returns a verbose explanation."""
+    """
+    Explain addition of two sexagesimal values and produce a verbose narrative.
+
+    Summary:
+        Produce a step-by-step, pedagogical explanation of adding two Sexagesimal
+        instances. The explanation documents sign handling (delegating to subtraction
+        for mixed signs), alignment of integer and fractional digits, per-column
+        addition with carry propagation from fractional to integer places, construction
+        of a calculation grid showing the aligned operands and result, and the final
+        canonical, normalized sum.
+
+    Args:
+        a (Sexagesimal): Left addend.
+        b (Sexagesimal): Right addend.
+
+    Returns:
+        VerboseResult: A container holding:
+            - result (Sexagesimal): the canonical sum (produced by the library's
+              arithmetic to guarantee normalization),
+            - title (str): a short descriptive title,
+            - steps (List[Union[ExplanationStep, CalculationGrid]]): a sequence of
+              narrative steps and a CalculationGrid illustrating the work.
+
+    Notes:
+        - When operands have opposite signs the narrative records the transformation
+          (e.g. A + (-B) -> A - B) and delegates to explain_subtraction to show the
+          borrowing behavior; the combined explanation is returned.
+        - Fractional parts are right-padded and integer parts are left-padded for
+          alignment prior to column-wise processing. Carries from fractional addition
+          propagate into integer columns and may produce a new high-order digit.
+        - The function both demonstrates the manual algorithm (for teaching) and
+          uses the authoritative Sexagesimal addition (a + b) to produce the final,
+          normalized result included in the VerboseResult.
+    """
 
     title = f"Addition of {a} + {b}"
 
@@ -272,7 +330,41 @@ def explain_addition(a: Sexagesimal, b: Sexagesimal) -> VerboseResult:
 
 
 def explain_subtraction(a: Sexagesimal, b: Sexagesimal) -> VerboseResult:
-    """Performs subtraction and returns a verbose explanation."""
+    """
+    Explain subtraction of two sexagesimal values and produce a verbose narrative.
+
+    Summary:
+        Produce a pedagogical, step-by-step explanation of computing A - B for
+        Sexagesimal operands. The explanation documents sign handling (delegating
+        to addition when signs differ), magnitude comparison, the borrow algorithm
+        across fractional and integer base-60 places, construction of a calculation
+        grid showing aligned operands and the result, and the canonical normalized
+        final value.
+
+    Args:
+        a (Sexagesimal): Minuend.
+        b (Sexagesimal): Subtrahend.
+
+    Returns:
+        VerboseResult: A container with:
+            - result (Sexagesimal): canonical difference (produced by the library's
+              arithmetic to guarantee normalization),
+            - title (str): a short descriptive title,
+            - steps (List[Union[ExplanationStep, CalculationGrid]]): narrative steps
+              and a CalculationGrid illustrating the borrowing and column-wise work.
+
+    Notes:
+        - When operands have opposite signs the function records the transformation
+          (e.g. -A - +B -> -(A + B), +A - -B -> A + B) and delegates to the addition
+          explainer; the returned VerboseResult combines both narratives and the
+          correctly signed final result.
+        - For magnitude subtraction the algorithm pads fractional parts on the right
+          and integer parts on the left for alignment, subtracts right-to-left,
+          propagating borrows from fractional into integer places as necessary.
+        - The calculation grid shows the padded operand rows and the raw digitwise
+          result; the authoritative final Sexagesimal value is produced by the
+          library subtraction (a - b) to ensure normalization and canonical zero/sign.
+    """
 
     title = f"Subtraction of {a} - {b}"
 
@@ -382,7 +474,44 @@ def explain_subtraction(a: Sexagesimal, b: Sexagesimal) -> VerboseResult:
 
 
 def explain_division(a: Sexagesimal, b: Sexagesimal) -> VerboseResult:
-    """Performs division and explains the rational number strategy."""
+    """
+    Explain division of two sexagesimal values using exact rational arithmetic.
+
+    Summary:
+        Demonstrate a clear, step-by-step strategy for dividing two Sexagesimal
+        instances by converting them to exact Rational numbers, performing the
+        division exactly, and then converting the quotient back into a sexagesimal
+        expansion (showing a limited number of fractional-place extraction steps
+        for pedagogy). The function also documents the handling of division by
+        zero and presents a human-friendly narrative describing the conversion
+        and extraction process.
+
+    Args:
+        a (Sexagesimal): Numerator.
+        b (Sexagesimal): Denominator.
+
+    Returns:
+        VerboseResult: A container with:
+            - result (Sexagesimal): the canonical quotient (produced by the
+              library's division to ensure normalization and correct sign),
+            - title (str): a short descriptive title,
+            - steps (List[ExplanationStep]): a sequence of narrative steps that
+              explain conversion to Rational, the exact division, and the process
+              of recovering sexagesimal integer and fractional digits.
+
+    Notes:
+        - Division is performed via exact Rational arithmetic (to avoid rounding
+          errors). The sexagesimal expansion of the quotient may be terminating
+          or repeating; the explainer shows the first few fractional extraction
+          steps (for demonstration) while the authoritative final Sexagesimal
+          result is obtained from the library's division operator.
+        - If the denominator is zero the function records an error step and
+          returns a placeholder VerboseResult (no numeric result can be produced).
+        - The conversion back to sexagesimal is performed by extracting the
+          integer part and repeatedly multiplying the fractional remainder by
+          BASE (60) to obtain successive base-60 digits; this process is shown
+          only up to a short demonstration depth in the narrative.
+    """
     title = f"Division of {a} / {b}"
     steps: List[ExplanationStep] = []
 

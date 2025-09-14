@@ -8,7 +8,7 @@ VAL_SEP = ","
 
 
 @dataclass(frozen=True, slots=True)
-class _SexagesimalParts:
+class SexagesimalParts:
     """
     An immutable, private container for the normalized components of a
     sexagesimal number.

@@ -1,5 +1,5 @@
 from typing import List, Tuple
-from sexagesimal_calculator.core import _SexagesimalParts, BASE
+from sexagesimal_calculator.core import SexagesimalParts, BASE
 from sexagesimal_calculator.conversion import normalize_parts
 
 
@@ -43,12 +43,12 @@ def pad_parts(
     return padded_A, padded_B
 
 
-def compare_magnitude(parts_a: _SexagesimalParts, parts_b: _SexagesimalParts) -> int:
+def compare_magnitude(parts_a: SexagesimalParts, parts_b: SexagesimalParts) -> int:
     """
     Compare the magnitudes (absolute values) of two sexagesimal parts.
 
     Summary:
-        Determine which of two normalized _SexagesimalParts has the greater magnitude
+        Determine which of two normalized SexagesimalParts has the greater magnitude
         by performing the following checks in order:
           1. Compare the lengths of the integer-part tuples (more digits => larger magnitude).
           2. If lengths are equal, compare integer parts lexicographically.
@@ -56,14 +56,14 @@ def compare_magnitude(parts_a: _SexagesimalParts, parts_b: _SexagesimalParts) ->
              length and compare them lexicographically.
 
     Args:
-        parts_a (_SexagesimalParts): First normalized parts to compare.
-        parts_b (_SexagesimalParts): Second normalized parts to compare.
+        parts_a (SexagesimalParts): First normalized parts to compare.
+        parts_b (SexagesimalParts): Second normalized parts to compare.
 
     Returns:
         int:
-            1   if |parts_a| > |parts_b|
-           -1   if |parts_a| < |parts_b|
-            0   if |parts_a| == |parts_b|
+             1   if |parts_a| > |parts_b|
+            -1   if |parts_a| < |parts_b|
+             0   if |parts_a| == |parts_b|
 
     Notes:
         - Inputs are expected to be normalized (no leading integer zeros or trailing fractional zeros).
@@ -87,7 +87,7 @@ def compare_magnitude(parts_a: _SexagesimalParts, parts_b: _SexagesimalParts) ->
     return 0  # They are equal
 
 
-def subtract_magnitude(larger_parts: _SexagesimalParts, smaller_parts: _SexagesimalParts) -> _SexagesimalParts:
+def subtract_magnitude(larger_parts: SexagesimalParts, smaller_parts: SexagesimalParts) -> SexagesimalParts:
     """
     Subtract the magnitude of two sexagesimal parts (assumes |larger| >= |smaller|).
 
@@ -97,16 +97,16 @@ def subtract_magnitude(larger_parts: _SexagesimalParts, smaller_parts: _Sexagesi
             - right-pads fractional parts to equal length and subtracts from least-significant
             fractional digit to most-significant, propagating borrows as needed;
             - left-pads integer parts to equal length and subtracts with any remaining borrow;
-            - returns a normalized, immutable _SexagesimalParts with a non-negative sign
+            - returns a normalized, immutable SexagesimalParts with a non-negative sign
             (caller is responsible for assigning the correct sign if needed).
 
     Args:
-        larger_parts (_SexagesimalParts): Normalized parts representing the minuend; must
+        larger_parts (SexagesimalParts): Normalized parts representing the minuend; must
             have magnitude greater than or equal to `smaller_parts`.
-        smaller_parts (_SexagesimalParts): Normalized parts representing the subtrahend.
+        smaller_parts (SexagesimalParts): Normalized parts representing the subtrahend.
 
     Returns:
-        _SexagesimalParts: A normalized, immutable parts container for the difference.
+        SexagesimalParts: A normalized, immutable parts container for the difference.
             The returned `is_negative` is always False (magnitude subtraction only).
 
     Notes:
@@ -205,7 +205,7 @@ def add_magnitude(a_parts: List[int], b_parts: List[int]) -> List[int]:
     return result
 
 
-def multiply_parts(a_parts: _SexagesimalParts, b_parts: _SexagesimalParts) -> _SexagesimalParts:
+def multiply_parts(a_parts: SexagesimalParts, b_parts: SexagesimalParts) -> SexagesimalParts:
     """
     Multiply two normalized sexagesimal parts using long multiplication.
 
@@ -221,11 +221,11 @@ def multiply_parts(a_parts: _SexagesimalParts, b_parts: _SexagesimalParts) -> _S
         - Normalize the result and set the sign to the XOR of the input signs.
 
     Args:
-        a_parts (_SexagesimalParts): Normalized parts of multiplicand.
-        b_parts (_SexagesimalParts): Normalized parts of multiplier.
+        a_parts (SexagesimalParts): Normalized parts of multiplicand.
+        b_parts (SexagesimalParts): Normalized parts of multiplier.
 
     Returns:
-        _SexagesimalParts: Normalized parts for the product. Fractional length
+        SexagesimalParts: Normalized parts for the product. Fractional length
         equals sum of input fractional lengths; returned parts are normalized
         (no extraneous leading/trailing zeros) and is_negative reflects the
         XOR of the input signs.
@@ -287,12 +287,12 @@ def multiply_parts(a_parts: _SexagesimalParts, b_parts: _SexagesimalParts) -> _S
     return normalize_parts(int_part, frac_part, a_parts.is_negative ^ b_parts.is_negative)
 
 
-def add(a_parts: _SexagesimalParts, b_parts: _SexagesimalParts) -> _SexagesimalParts:
+def add(a_parts: SexagesimalParts, b_parts: SexagesimalParts) -> SexagesimalParts:
     """
     Add two normalized sexagesimal parts (magnitude addition in base-60).
 
     Summary:
-        Compute the sum of two normalized _SexagesimalParts by aligning their
+        Compute the sum of two normalized SexagesimalParts by aligning their
         fractional and integer digit sequences, performing digit-wise addition
         in base BASE (60), and propagating carries from the least-significant
         fractional place up through integer places. Any final carry that
@@ -300,14 +300,14 @@ def add(a_parts: _SexagesimalParts, b_parts: _SexagesimalParts) -> _SexagesimalP
         The returned parts are normalized and immutable.
 
     Args:
-        a_parts (_SexagesimalParts): Left addend; expected to be normalized
+        a_parts (SexagesimalParts): Left addend; expected to be normalized
             (no extraneous leading integer zeros or trailing fractional zeros,
             except canonical zero).
-        b_parts (_SexagesimalParts): Right addend; same normalization expectation
+        b_parts (SexagesimalParts): Right addend; same normalization expectation
             as `a_parts`.
 
     Returns:
-        _SexagesimalParts: A normalized, immutable parts container representing
+        SexagesimalParts: A normalized, immutable parts container representing
         the sum. The returned `is_negative` flag is set to a_parts.is_negative
         (this function performs magnitude addition; callers should arrange sign
         semantics before calling).
@@ -354,12 +354,12 @@ def add(a_parts: _SexagesimalParts, b_parts: _SexagesimalParts) -> _SexagesimalP
     return normalize_parts(int_result, frac_result, a_parts.is_negative)
 
 
-def subtract(a_parts: _SexagesimalParts, b_parts: _SexagesimalParts) -> _SexagesimalParts:
+def subtract(a_parts: SexagesimalParts, b_parts: SexagesimalParts) -> SexagesimalParts:
     """
     Subtract two normalized sexagesimal parts (compute a_parts - b_parts).
 
     Summary:
-        Perform sign-aware subtraction of two normalized _SexagesimalParts.
+        Perform sign-aware subtraction of two normalized SexagesimalParts.
         The function compares magnitudes and delegates to subtract_magnitude
         to compute the absolute-difference. The returned parts carry the
         appropriate sign:
@@ -367,11 +367,11 @@ def subtract(a_parts: _SexagesimalParts, b_parts: _SexagesimalParts) -> _Sexages
           - If |a_parts| <  |b_parts| the result is the negation of the magnitude difference.
 
     Args:
-        a_parts (_SexagesimalParts): Minuend parts (normalized: no leading integer zeros or trailing fractional zeros).
-        b_parts (_SexagesimalParts): Subtrahend parts (same normalization expectation).
+        a_parts (SexagesimalParts): Minuend parts (normalized: no leading integer zeros or trailing fractional zeros).
+        b_parts (SexagesimalParts): Subtrahend parts (same normalization expectation).
 
     Returns:
-        _SexagesimalParts: A normalized, immutable parts container representing a_parts - b_parts.
+        SexagesimalParts: A normalized, immutable parts container representing a_parts - b_parts.
             The is_negative flag reflects the correct sign of the result; canonical zero is non-negative.
 
     Notes:
@@ -388,7 +388,7 @@ def subtract(a_parts: _SexagesimalParts, b_parts: _SexagesimalParts) -> _Sexages
     else:
         result_normalized_parts = subtract_magnitude(b_parts, a_parts)
         # Result will be negative
-        result_normalized_parts = _SexagesimalParts(
+        result_normalized_parts = SexagesimalParts(
             is_negative=True,
             integer_part=result_normalized_parts.integer_part,
             fractional_part=result_normalized_parts.fractional_part,

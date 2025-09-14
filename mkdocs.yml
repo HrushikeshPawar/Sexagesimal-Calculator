@@ -1,0 +1,53 @@
+# In mkdocs.yml
+
+site_name: Sexagesimal Calculator
+repo_url: https://github.com/HrushikeshPawar/Sexagesimal-Calculator
+repo_name: HrushikeshPawar/Sexagesimal-Calculator
+
+theme:
+  name: material
+  features:
+    - content.code.annotate
+    - navigation.tabs
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+# This defines the navigation bar on your website
+nav:
+  - 'Home': index.md
+  - 'User Guide':
+    - 'Installation': guide/installation.md
+    - 'Basic Usage': guide/basic-usage.md
+    - 'Arithmetic Operations': guide/arithmetic.md
+    - 'Conversions & Rounding': guide/conversions.md
+    - 'Educational Explanations': guide/explanations.md
+    - 'Utilities': guide/utilities.md
+  - 'API Reference': api.md
+  - 'Developer Guide':
+    - 'Internal Modules': internals.md
+  - 'About': about.md
+
+plugins:
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_root_heading: true
+            # This tells the plugin to use the Google style you wrote
+            docstring_style: google
+            show_source: false
+            signature_crossrefs: true
+            separate_signature: true # Put signature on its own line
+            show_signature_annotations: true # Show type hints in signatures
+            show_signature_type_parameters: true
+            # This controls the order in which members appear on the page.
+            members_order: source
+            annotations_path: brief
+            modernize_annotations: true

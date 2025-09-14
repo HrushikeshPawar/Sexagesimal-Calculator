@@ -2,13 +2,13 @@ from sympy import Rational
 from typing import List, TYPE_CHECKING
 from decimal import Decimal, InvalidOperation, localcontext
 
-from sexagesimal_calculator.core import BASE, PART_SEP, VAL_SEP, _SexagesimalParts
+from sexagesimal_calculator.core import BASE, PART_SEP, VAL_SEP, SexagesimalParts
 
 if TYPE_CHECKING:
     from sexagesimal_calculator.sexagesimal import Sexagesimal
 
 
-def normalize_parts(integer_parts: List[int], fractional_parts: List[int], is_negative: bool) -> _SexagesimalParts:
+def normalize_parts(integer_parts: List[int], fractional_parts: List[int], is_negative: bool) -> SexagesimalParts:
     """
     Normalize integer and fractional sexagesimal digit lists into a canonical parts container.
 
@@ -21,7 +21,7 @@ def normalize_parts(integer_parts: List[int], fractional_parts: List[int], is_ne
             - preserving the sign except that zero is always non-negative.
 
     Notes:
-        - The function returns a frozen _SexagesimalParts dataclass suitable for storage
+        - The function returns a frozen SexagesimalParts dataclass suitable for storage
             on Sexagesimal instances.
         - The implementation operates in-place on the provided lists (it mutates the
             lists by popping). Callers who need to keep their originals should pass copies.
@@ -34,7 +34,7 @@ def normalize_parts(integer_parts: List[int], fractional_parts: List[int], is_ne
         is_negative (bool): Sign flag; will be cleared for the canonical zero representation.
 
     Returns:
-        _SexagesimalParts: Immutable, normalized parts with fields:
+        SexagesimalParts: Immutable, normalized parts with fields:
             - is_negative (bool)
             - integer_part (Tuple[int, ...])
             - fractional_part (Tuple[int, ...])
@@ -59,7 +59,7 @@ def normalize_parts(integer_parts: List[int], fractional_parts: List[int], is_ne
         fractional_parts = [0]
         is_negative = False  # Zero is not negative
 
-    return _SexagesimalParts(
+    return SexagesimalParts(
         is_negative=is_negative, integer_part=tuple(integer_parts), fractional_part=tuple(fractional_parts)
     )
 
@@ -155,12 +155,12 @@ def to_rational(sexagesimal: "Sexagesimal") -> Rational:
     return -total if sexagesimal.is_negative else total  # type: ignore
 
 
-def rational_to_sexagesimal_parts(num: Rational, max_frac_places: int = 80) -> _SexagesimalParts:
+def rational_to_sexagesimal_parts(num: Rational, max_frac_places: int = 80) -> SexagesimalParts:
     """
     Convert a sympy.Rational to normalized sexagesimal parts.
 
     Summary:
-        Produce a canonical _SexagesimalParts representation for the given exact
+        Produce a canonical SexagesimalParts representation for the given exact
         Rational `num`. The function extracts the integer portion as base-60
         digits and generates up to `max_frac_places` fractional base-60 digits
         by repeatedly multiplying the fractional remainder by BASE. The result
@@ -175,7 +175,7 @@ def rational_to_sexagesimal_parts(num: Rational, max_frac_places: int = 80) -> _
             terminates. Defaults to 80.
 
     Returns:
-        _SexagesimalParts: Immutable, normalized parts with fields:
+        SexagesimalParts: Immutable, normalized parts with fields:
             - is_negative (bool)
             - integer_part (Tuple[int, ...])
             - fractional_part (Tuple[int, ...])
@@ -188,7 +188,7 @@ def rational_to_sexagesimal_parts(num: Rational, max_frac_places: int = 80) -> _
     """
 
     if num == 0:
-        return _SexagesimalParts(is_negative=False, integer_part=(0,), fractional_part=(0,))
+        return SexagesimalParts(is_negative=False, integer_part=(0,), fractional_part=(0,))
 
     is_negative: bool = num < 0
     abs_num: Rational = abs(num)

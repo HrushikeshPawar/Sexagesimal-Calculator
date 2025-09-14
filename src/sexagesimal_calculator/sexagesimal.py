@@ -7,7 +7,7 @@ from sympy import Rational
 from sexagesimal_calculator import conversion
 from sexagesimal_calculator import arithmetic
 
-from sexagesimal_calculator.core import BASE, PART_SEP, VAL_SEP, _SexagesimalParts
+from sexagesimal_calculator.core import BASE, PART_SEP, VAL_SEP, SexagesimalParts
 from sexagesimal_calculator.exceptions import InvalidFormatError
 
 
@@ -39,7 +39,7 @@ class Sexagesimal:
             places of the number. For 123;45, this would be (45,).
 
     Raises:
-        ValueError: If the input string is not in a valid decimal or
+        InvalidFormatError: If the input string is not in a valid decimal or
             sexagesimal format, or if any sexagesimal part is >= 60.
 
     Examples:
@@ -52,22 +52,38 @@ class Sexagesimal:
     # The constructor
     def __init__(self, value: Union[str, int, float]):
         """
-        Initialize a Sexagesimal instance.
+        Initialize a Sexagesimal instance from a variety of inputs.
 
-        Create an immutable sexagesimal (base-60) number from a string, int, float, or another Sexagesimal.
-        Decimal inputs (e.g. 1.5 or "1.5") are converted to sexagesimal; sexagesimal strings (e.g. "01;30,15")
-        are validated and normalized; passing a Sexagesimal returns an equivalent instance.
+        Summary:
+            Construct an immutable sexagesimal (base-60) value from:
+
+              - an existing Sexagesimal (copied),
+              - a sexagesimal string like "01;30,15",
+              - a decimal string like "1.5",
+              - an int or float (treated as decimal).
+            Decimal inputs are converted to sexagesimal; sexagesimal strings are
+            parsed and validated; normalization (removal of extraneous zeros)
+            is applied before the internal canonical representation is stored.
 
         Args:
-            value (Union[str, int, float, Sexagesimal]): The value to initialize the instance from.
-                - str: a decimal string ("1.5") or a sexagesimal string ("01;30,15" or "1;30").
-                - int or float: treated as a decimal number and converted to sexagesimal.
-                - Sexagesimal: an existing instance whose internal parts are copied.
+            value (Union[str, int, float, Sexagesimal]):
+                - Sexagesimal: instance to copy.
+                - str: decimal ("1.5") or sexagesimal ("01;30,15" or "1;30").
+                - int | float: treated as a decimal number and converted.
 
         Raises:
-            ValueError: If the input cannot be parsed as a decimal or sexagesimal string.
-            ValueError: If any sexagesimal part is not in the valid range [0, 59].
+            InvalidFormatError: If the input string is not a valid decimal or
+                sexagesimal format, or if parsing fails.
+            InvalidFormatError: If any parsed sexagesimal digit is outside the
+                valid range [0, BASE-1] (BASE == 60 in this module).
 
+        Notes:
+            - The constructor always stores a normalized, immutable SexagesimalParts
+              container obtained via arithmetic.normalize_parts.
+            - A Sexagesimal passed to the constructor is copied by reusing its
+              internal parts object (no re-parsing).
+            - Decimal-to-sexagesimal conversion uses the module conversion utilities
+              with a reasonable default precision for fractional expansion.
         """
         # Step 0: Handle Sexagesimal input directly i.e Sexagesimal(Sexagesimal(...))
         if isinstance(value, Sexagesimal):
@@ -108,17 +124,17 @@ class Sexagesimal:
         self._parts = arithmetic.normalize_parts(integer_parts, fractional_parts, is_negative)
 
     @classmethod
-    def _from_parts(cls, parts: _SexagesimalParts) -> "Sexagesimal":
+    def _from_parts(cls, parts: SexagesimalParts) -> "Sexagesimal":
         """
         Create a Sexagesimal instance directly from normalized parts.
 
         This internal classmethod constructs a new Sexagesimal object without invoking
-        __init__, by attaching a pre-normalized _SexagesimalParts container to the
+        __init__, by attaching a pre-normalized SexagesimalParts container to the
         new instance. It is used throughout the implementation to return results
         produced by internal algorithms without re-parsing or re-normalizing.
 
         Args:
-            parts (_SexagesimalParts): An immutable, normalized parts container with:
+            parts (SexagesimalParts): An immutable, normalized parts container with:
                 - is_negative (bool): sign of the value
                 - integer_part (Tuple[int, ...]): canonical integer-place digits
                 - fractional_part (Tuple[int, ...]): canonical fractional-place digits
@@ -130,7 +146,7 @@ class Sexagesimal:
             - The caller is responsible for ensuring `parts` are already normalized
               (no extraneous leading integer zeros or trailing fractional zeros,
               except the canonical zero representation).
-            - This method preserves immutability by reusing the frozen _SexagesimalParts.
+            - This method preserves immutability by reusing the frozen SexagesimalParts.
         """
         instance: Sexagesimal = cls.__new__(cls)
         instance._parts = parts
@@ -251,7 +267,7 @@ class Sexagesimal:
         result_rational: Rational = self_rational / other_rational  # type: ignore
 
         # Step 4: Convert the result back to (normalized) Sexagesimal parts
-        result_parts: _SexagesimalParts = conversion.rational_to_sexagesimal_parts(result_rational)
+        result_parts: SexagesimalParts = conversion.rational_to_sexagesimal_parts(result_rational)
 
         return Sexagesimal._from_parts(result_parts)
 
@@ -261,7 +277,7 @@ class Sexagesimal:
             return self
 
         return Sexagesimal._from_parts(
-            _SexagesimalParts(
+            SexagesimalParts(
                 is_negative=not self._parts.is_negative,
                 integer_part=self._parts.integer_part,
                 fractional_part=self._parts.fractional_part,
@@ -276,7 +292,7 @@ class Sexagesimal:
     # Absolute Value
     def __abs__(self) -> "Sexagesimal":
         return Sexagesimal._from_parts(
-            _SexagesimalParts(
+            SexagesimalParts(
                 is_negative=False,
                 integer_part=self._parts.integer_part,
                 fractional_part=self._parts.fractional_part,
@@ -286,24 +302,24 @@ class Sexagesimal:
     # The Power of a Sexagesimal Number
     def __pow__(self, n: int) -> "Sexagesimal":
         """
-        __pow__ Calculates the power of a Sexagesimal number to an integer exponent.
+        __pow__ Calculates the power of a Sexagesimal number to an integer n.
 
-        This method supports positive, negative, and zero integer exponents,
+        This method supports positive, negative, and zero integer n,
         leveraging the existing multiplication and division methods of the class.
 
-        - For positive exponents, it uses repeated multiplication.
-        - For a zero exponent, it returns 1 (Sexagesimal('01;00')).
-        - For negative exponents, it calculates the reciprocal of the positive power.
+        - For positive n, it uses repeated multiplication.
+        - For a zero n, it returns 1 (Sexagesimal('01;00')).
+        - For negative n, it calculates the reciprocal of the positive power.
 
         Args:
-            exponent (int): The integer exponent to raise the number to.
+            n (int): The integer n to raise the number to.
 
         Returns:
             Sexagesimal: The result of the power operation.
 
         Raises:
-            TypeError: If the exponent is not an integer.
-            ZeroDivisionError: If the base is zero and the exponent is negative.
+            TypeError: If the n is not an integer.
+            ZeroDivisionError: If the base is zero and the n is negative.
         """
 
         if not isinstance(n, int):
