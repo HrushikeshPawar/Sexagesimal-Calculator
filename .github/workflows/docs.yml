@@ -1,0 +1,46 @@
+# In .github/workflows/docs.yml
+
+name: Deploy Documentation to GitHub Pages
+
+# --- Trigger Conditions ---
+# This workflow runs ONLY when a push is made to the 'main' branch.
+# We don't want to deploy docs for every feature branch.
+on:
+  push:
+    branches:
+      - main
+
+# --- Permissions ---
+# This is a crucial security step. It grants the workflow the necessary
+# permissions to write to your repository (to push to the gh-pages branch).
+permissions:
+  contents: write
+
+jobs:
+  deploy-docs:
+    # The type of virtual machine to run the job on.
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Step 1: Check out your repository code.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Install uv, your project's package manager.
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      # Step 3: Set up a recent version of Python.
+      - name: Set up Python
+        run: uv python install
+
+      # Step 4: Install your project's dependencies, including mkdocs.
+      # We need to install the project itself to allow mkdocstrings to find it.
+      - name: Install dependencies
+        run: uv sync --all-packages
+
+      # Step 5: Build and Deploy the documentation.
+      # The `mkdocs gh-deploy` command is a magic command that builds the site
+      # and pushes it to the `gh-pages` branch all in one step.
+      - name: Deploy documentation with MkDocs
+        run: uv run mkdocs gh-deploy --force
