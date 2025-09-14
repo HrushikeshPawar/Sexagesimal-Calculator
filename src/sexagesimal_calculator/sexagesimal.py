@@ -1,29 +1,14 @@
 # Imports
-from dataclasses import dataclass
-from decimal import Decimal, getcontext
-from math import pow
 from typing import List, Tuple, Union
+from decimal import Decimal, getcontext
 
 from sympy import Rational
 
 from sexagesimal_calculator import conversion
+
+from sexagesimal_calculator.core import BASE, PART_SEP, VAL_SEP, _SexagesimalParts
+from sexagesimal_calculator.utils import _normalize_parts
 from sexagesimal_calculator.exceptions import InvalidFormatError
-from sexagesimal_calculator.contants import BASE, PART_SEP, VAL_SEP
-
-
-@dataclass(frozen=True, slots=True)
-class _SexagesimalParts:
-    """
-    An immutable, private container for the normalized components of a
-    sexagesimal number.
-
-    Using frozen=True makes instances immutable and hashable.
-    Using slots=True optimizes memory usage and attribute access speed.
-    """
-
-    is_negative: bool
-    integer_part: Tuple[int, ...]
-    fractional_part: Tuple[int, ...]
 
 
 # The Sexagesimal class
@@ -120,7 +105,7 @@ class Sexagesimal:
             raise InvalidFormatError(f"Fraction Part has a value greater than {BASE}")
 
         # Step 5: Normalize the parts (remove leading/trailing zeros) and create a frozen dataclass
-        self._parts = Sexagesimal._normalize_parts(integer_parts, fractional_parts, is_negative)
+        self._parts = _normalize_parts(integer_parts, fractional_parts, is_negative)
 
     @classmethod
     def _from_parts(cls, parts: _SexagesimalParts) -> "Sexagesimal":
@@ -200,64 +185,6 @@ class Sexagesimal:
 
     def __repr__(self) -> str:
         return f"Sexagesimal('{self!s}')"
-
-    @staticmethod
-    def _normalize_parts(integer_parts: List[int], fractional_parts: List[int], is_negative: bool) -> _SexagesimalParts:
-        """
-        Normalize integer and fractional sexagesimal digit lists into a canonical parts container.
-
-        Summary:
-            Cleans up the provided integer and fractional digit lists so they represent a
-            canonical, immutable sexagesimal value. This includes:
-              - removing extraneous leading zeros from the integer part,
-              - removing extraneous trailing zeros from the fractional part,
-              - ensuring a canonical representation for zero (integer_part=(0,), fractional_part=(0,)),
-              - preserving the sign except that zero is always non-negative.
-
-        Notes:
-            - The function returns a frozen _SexagesimalParts dataclass suitable for storage
-              on Sexagesimal instances.
-            - The implementation operates in-place on the provided lists (it mutates the
-              lists by popping). Callers who need to keep their originals should pass copies.
-            - The canonical fractional part is always non-empty; if all fractional digits are
-              stripped, it becomes [0].
-
-        Args:
-            integer_parts (List[int]): List of integer-place base-60 digits (most-significant first).
-            fractional_parts (List[int]): List of fractional-place base-60 digits (most-significant first).
-            is_negative (bool): Sign flag; will be cleared for the canonical zero representation.
-
-        Returns:
-            _SexagesimalParts: Immutable, normalized parts with fields:
-                - is_negative (bool)
-                - integer_part (Tuple[int, ...])
-                - fractional_part (Tuple[int, ...])
-        """
-
-        # Remove leading zeros in integer part
-        while len(integer_parts) > 1 and integer_parts[0] == 0:
-            integer_parts.pop(0)
-
-        # Remove trailing zeros in fractional part
-        while len(fractional_parts) > 1 and fractional_parts[-1] == 0:
-            fractional_parts.pop()
-
-        # Enforce canonical representation for zero fractional part.
-        # If the fractional part is empty after stripping zeros, it must be represented as [0].
-        if not fractional_parts:
-            fractional_parts = [0]
-
-        # Handle zero case
-        if (not integer_parts and not fractional_parts) or (
-            all(part == 0 for part in integer_parts + fractional_parts)
-        ):
-            integer_parts = [0]
-            fractional_parts = [0]
-            is_negative = False  # Zero is not negative
-
-        return _SexagesimalParts(
-            is_negative=is_negative, integer_part=tuple(integer_parts), fractional_part=tuple(fractional_parts)
-        )
 
     @staticmethod
     def _pad_parts(
@@ -347,7 +274,7 @@ class Sexagesimal:
             int_result.insert(0, carry)
 
         # Step 6: Normalize and create new instance
-        normalized_parts = Sexagesimal._normalize_parts(int_result, frac_result, self.is_negative)
+        normalized_parts = _normalize_parts(int_result, frac_result, self.is_negative)
         return Sexagesimal._from_parts(normalized_parts)
 
     def _compare_magnitude(self, other: "Sexagesimal") -> int:
@@ -462,7 +389,7 @@ class Sexagesimal:
             result_int_list.insert(0, val)
 
         # Return the normalized parts
-        return Sexagesimal._normalize_parts(result_int_list, result_frac_list, False)
+        return _normalize_parts(result_int_list, result_frac_list, False)
 
     # The Subtraction of two Sexagesimal Numbers
     def __sub__(self, other: "Sexagesimal") -> "Sexagesimal":
@@ -625,7 +552,7 @@ class Sexagesimal:
             frac_part = [0]
 
         # Step 5: Normalize and return the result parts
-        return Sexagesimal._normalize_parts(int_part, frac_part, a_parts.is_negative ^ b_parts.is_negative)
+        return _normalize_parts(int_part, frac_part, a_parts.is_negative ^ b_parts.is_negative)
 
     # The Multiplication of two Sexagesimal Numbers
     def __mul__(self, other: "Sexagesimal") -> "Sexagesimal":
@@ -634,105 +561,6 @@ class Sexagesimal:
 
         # Use the Multiplication Algorithm
         return Sexagesimal._from_parts(Sexagesimal._multiply_parts(self._parts, other._parts))
-
-    def _to_rational(self) -> Rational:
-        """
-        Convert the internal sexagesimal representation to an exact sympy.Rational.
-
-        Summary:
-            Build an exact Rational by summing the integer-place digits weighted by
-            BASE**k (k = 0,1,2,...) and the fractional-place digits as digit/BASE**k
-            (k = 1,2,...). The sign of the result matches the instance sign; zero is
-            returned as a non-negative Rational.
-
-        Args:
-            self (Sexagesimal): The Sexagesimal instance to convert.
-
-        Returns:
-            Rational: Exact rational value equivalent to this sexagesimal number.
-
-        Notes:
-            - Uses sympy.Rational for exact fractional arithmetic.
-            - Integer and fractional contributions are accumulated separately.
-            - The implementation preserves exactness (no floating-point rounding).
-        """
-
-        total = Rational(0)
-
-        # Sum of integer digits
-        for idx, digit in enumerate(reversed(self.integer_part)):
-            total += digit * pow(BASE, idx)  # type: ignore
-
-        # Sum of fractional digits
-        for idx, digit in enumerate(self.fractional_part, start=1):
-            total += Rational(digit, pow(BASE, idx))  # type: ignore
-
-        return -total if self.is_negative else total  # type: ignore
-
-    @staticmethod
-    def _rational_to_sexagesimal_parts(num: Rational, max_frac_places: int = 80) -> _SexagesimalParts:
-        """
-        Convert a sympy.Rational to normalized sexagesimal parts.
-
-        Summary:
-            Produce a canonical _SexagesimalParts representation for the given exact
-            Rational `num`. The function extracts the integer portion as base-60
-            digits and generates up to `max_frac_places` fractional base-60 digits
-            by repeatedly multiplying the fractional remainder by BASE. The result
-            is normalized (no extraneous leading integer zeros or trailing
-            fractional zeros) and preserves the sign of the input; zero is returned
-            using the canonical non-negative representation.
-
-        Args:
-            num (Rational): Exact rational value to convert.
-            max_frac_places (int, optional): Maximum number of fractional base-60
-                digits to produce. Conversion stops early if the fractional part
-                terminates. Defaults to 80.
-
-        Returns:
-            _SexagesimalParts: Immutable, normalized parts with fields:
-                - is_negative (bool)
-                - integer_part (Tuple[int, ...])
-                - fractional_part (Tuple[int, ...])
-
-        Notes:
-            - Uses exact Rational arithmetic; no floating-point rounding is used.
-            - If the sexagesimal expansion is non-terminating the result is a
-              truncated expansion of at most `max_frac_places` digits.
-            - Callers may increase `max_frac_places` to reduce truncation error.
-        """
-
-        if num == 0:
-            return _SexagesimalParts(is_negative=False, integer_part=(0,), fractional_part=(0,))
-
-        is_negative: bool = num < 0
-        abs_num: Rational = abs(num)
-
-        # Step 1: Calculate integer part and convert to base-<BASE> tuple
-        integer_val = int(abs_num)
-        integer_parts: List[int] = []
-
-        if integer_val == 0:
-            integer_parts.append(0)
-        else:
-            while integer_val > 0:
-                integer_parts.insert(0, integer_val % BASE)
-                integer_val //= BASE
-
-        # Step 2: Calculate fractional part, using remainder
-        remainder: Rational = abs_num - int(abs_num)  # type: ignore
-        fractional_parts: List[int] = []
-
-        for _ in range(max_frac_places):
-            remainder *= BASE  # type: ignore
-            frac_digit = int(remainder)
-            fractional_parts.append(frac_digit)
-            remainder -= frac_digit  # type: ignore
-
-            if remainder == 0:
-                break
-
-        return Sexagesimal._normalize_parts(integer_parts, fractional_parts, is_negative)
 
     # The Division of two Sexagesimal Numbers
     def __truediv__(self, other: "Sexagesimal") -> "Sexagesimal":
@@ -744,14 +572,14 @@ class Sexagesimal:
             raise ZeroDivisionError("Division by zero is not allowed.")
 
         # Step 2: Convert both numbers to Rational
-        self_rational: Rational = self._to_rational()
-        other_rational: Rational = other._to_rational()
+        self_rational: Rational = conversion._to_rational(self)
+        other_rational: Rational = conversion._to_rational(other)
 
         # Step 3: Perform division in Rational
         result_rational: Rational = self_rational / other_rational  # type: ignore
 
         # Step 4: Convert the result back to (normalized) Sexagesimal parts
-        result_parts: _SexagesimalParts = Sexagesimal._rational_to_sexagesimal_parts(result_rational)
+        result_parts: _SexagesimalParts = conversion._rational_to_sexagesimal_parts(result_rational)
 
         return Sexagesimal._from_parts(result_parts)
 
@@ -998,7 +826,7 @@ class Sexagesimal:
 
         if not round_up:
             # No rounding up needed
-            new_parts = Sexagesimal._normalize_parts(list(self.integer_part), new_frac_list, self.is_negative)
+            new_parts = _normalize_parts(list(self.integer_part), new_frac_list, self.is_negative)
             return Sexagesimal._from_parts(new_parts)
 
         # ------------------------- Handling the rounding up ------------------------- #
@@ -1037,7 +865,7 @@ class Sexagesimal:
                 else:
                     new_int_list.insert(0, carry)
 
-        new_parts = Sexagesimal._normalize_parts(new_int_list, new_frac_list, self.is_negative)
+        new_parts = _normalize_parts(new_int_list, new_frac_list, self.is_negative)
         return Sexagesimal._from_parts(new_parts)
 
     # Convert the given Sexagesimal Number from Mod 60 (default form) to Mod N. Output is a string
