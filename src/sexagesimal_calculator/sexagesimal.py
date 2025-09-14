@@ -7,11 +7,7 @@ from typing import List, Tuple, Union
 from sympy import Rational
 
 from sexagesimal_calculator.exceptions import InvalidFormatError
-
-# Constants
-BASE = 60
-PART_SEP = ";"
-VAL_SEP = ","
+from sexagesimal_calculator.contants import BASE, PART_SEP, VAL_SEP
 
 
 @dataclass(frozen=True, slots=True)
