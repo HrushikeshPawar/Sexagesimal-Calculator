@@ -193,9 +193,15 @@ def explain_multiplication(a: Sexagesimal, b: Sexagesimal) -> VerboseResult:
 
 def explain_addition(a: Sexagesimal, b: Sexagesimal) -> VerboseResult:
     """Performs addition and returns a verbose explanation."""
+
+    title = f"Addition of {a} + {b}"
+
     # Handle sign logic by delegating to subtraction if signs differ
     if a.is_negative != b.is_negative:
-        steps = [ExplanationStep("Signs are different, so this addition becomes a subtraction.")]
+        steps = [
+            ExplanationStep("Signs of the operands are different."),
+            ExplanationStep("The operation delegates to subtraction to handle the mixed signs."),
+        ]
         if a.is_negative:
             # -A + B  ->  B - A
             steps.append(ExplanationStep("Operation becomes: B - A", f"{b} - {abs(a)}"))
@@ -206,11 +212,8 @@ def explain_addition(a: Sexagesimal, b: Sexagesimal) -> VerboseResult:
             sub_explanation = explain_subtraction(a, abs(b))
 
         # Prepend our explanation to the steps from the subtraction explanation
-        return VerboseResult(
-            result=sub_explanation.result, title=sub_explanation.title, steps=steps + sub_explanation.steps
-        )
+        return VerboseResult(result=sub_explanation.result, title=title, steps=steps + sub_explanation.steps)
 
-    title = f"Addition of {a} + {b}"
     steps: List[Union[ExplanationStep, CalculationGrid]] = []
 
     steps.append(ExplanationStep("Both numbers have the same sign, so we add their magnitudes and keep the sign."))
@@ -270,9 +273,15 @@ def explain_addition(a: Sexagesimal, b: Sexagesimal) -> VerboseResult:
 
 def explain_subtraction(a: Sexagesimal, b: Sexagesimal) -> VerboseResult:
     """Performs subtraction and returns a verbose explanation."""
+
+    title = f"Subtraction of {a} - {b}"
+
     # Handle sign logic by delegating to addition
     if a.is_negative != b.is_negative:
-        steps = [ExplanationStep("Signs are different, so this subtraction becomes an addition.")]
+        steps = [
+            ExplanationStep("Signs of the operands are different."),
+            ExplanationStep("The operation delegates to addition to handle the mixed signs."),
+        ]
         if a.is_negative:
             # -A - +B  ->  -(A + B)
             steps.append(ExplanationStep("Operation becomes: -(A + B)", f"-({abs(a)} + {b})"))
@@ -281,7 +290,7 @@ def explain_subtraction(a: Sexagesimal, b: Sexagesimal) -> VerboseResult:
             # Prepend steps and negate the final result
             return VerboseResult(
                 result=-(add_explanation.result),  # Correctly negates the final result
-                title=add_explanation.title,
+                title=title,
                 steps=steps + add_explanation.steps,
             )
         else:
@@ -289,9 +298,7 @@ def explain_subtraction(a: Sexagesimal, b: Sexagesimal) -> VerboseResult:
             steps.append(ExplanationStep("Operation becomes: A + B", f"{a} + {abs(b)}"))
             add_explanation = explain_addition(a, abs(b))
 
-            return VerboseResult(
-                result=add_explanation.result, title=add_explanation.title, steps=steps + add_explanation.steps
-            )
+            return VerboseResult(result=add_explanation.result, title=title, steps=steps + add_explanation.steps)
 
     # If both negative, swap to a positive subtraction
     if a.is_negative and b.is_negative:
@@ -299,12 +306,9 @@ def explain_subtraction(a: Sexagesimal, b: Sexagesimal) -> VerboseResult:
         steps.append(ExplanationStep("Operation -A - -B is equivalent to B - A", f"{abs(b)} - {abs(a)}"))
         sub_explanation = explain_subtraction(abs(b), abs(a))
 
-        return VerboseResult(
-            result=sub_explanation.result, title=sub_explanation.title, steps=steps + sub_explanation.steps
-        )
+        return VerboseResult(result=sub_explanation.result, title=title, steps=steps + sub_explanation.steps)
 
     # --- Core Magnitude Subtraction ---
-    title = f"Subtraction of {a} - {b}"
     steps: List[Union[ExplanationStep, CalculationGrid]] = []
 
     comparison = compare_magnitude(a._parts, b._parts)

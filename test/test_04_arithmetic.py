@@ -1,4 +1,5 @@
 import pytest
+import operator
 from sexagesimal_calculator.sexagesimal import Sexagesimal
 
 
@@ -107,3 +108,128 @@ def test_power_zero_base_edge_cases():
     assert zero**0 == Sexagesimal(1)  # Convention: 0**0 is 1
     with pytest.raises(ZeroDivisionError):
         zero**-2
+
+
+@pytest.mark.parametrize(
+    "initial_str, addend_str, expected_str",
+    [
+        ("1;30", "0;30", "02;00"),  # Simple case
+        ("0;59", "0;01", "01;00"),  # Fractional carry
+        ("59;59", "0;01", "01,00;00"),  # Integer cascade
+        ("10;00", "-2;30", "07;30"),  # Adding a negative
+        ("-10;00", "2;30", "-07;30"),  # Adding to a negative
+        ("10;00", "0;00", "10;00"),  # Adding zero
+    ],
+    ids=[
+        "simple",
+        "frac-carry",
+        "int-cascade",
+        "add-negative",
+        "add-to-negative",
+        "add-zero",
+    ],
+)
+def test_iadd(initial_str, addend_str, expected_str):
+    """Tests the in-place addition method (+=)."""
+    s = Sexagesimal(initial_str)
+    addend = Sexagesimal(addend_str)
+
+    # Perform the in-place operation
+    s += addend
+
+    assert s == Sexagesimal(expected_str)
+
+
+@pytest.mark.parametrize(
+    "initial_str, subtrahend_str, expected_str",
+    [
+        ("2;30", "0;30", "02;00"),  # Simple case
+        ("1;00", "0;01", "00;59"),  # Fractional borrow
+        ("1,00;00", "0;01", "59;59"),  # Integer cascade
+        ("10;00", "-2;30", "12;30"),  # Subtracting a negative
+        ("-10;00", "2;30", "-12;30"),  # Subtracting from a negative
+        ("10;00", "0;00", "10;00"),  # Subtracting zero
+        ("5;15", "5;15", "00;00"),  # Subtracting to zero
+    ],
+    ids=[
+        "simple",
+        "frac-borrow",
+        "int-cascade",
+        "sub-negative",
+        "sub-from-negative",
+        "sub-zero",
+        "sub-to-zero",
+    ],
+)
+def test_isub(initial_str, subtrahend_str, expected_str):
+    """Tests the in-place subtraction method (-=)."""
+    s = Sexagesimal(initial_str)
+    subtrahend = Sexagesimal(subtrahend_str)
+
+    # Perform the in-place operation
+    s -= subtrahend
+
+    assert s == Sexagesimal(expected_str)
+
+
+@pytest.mark.parametrize(
+    "initial_str, multiplier_str, expected_str",
+    [
+        ("2;30", "2;00", "05;00"),  # Simple case
+        ("1;15", "0;30", "00;37,30"),  # Fractional multiplication
+        ("10;00", "-2;00", "-20;00"),  # Multiplying by a negative
+        ("-10;00", "2;00", "-20;00"),  # Multiplying a negative
+        ("10;00", "0;00", "00;00"),  # Multiplying by zero
+        ("10;00", "1;00", "10;00"),  # Multiplying by one
+        ("10;00", "-1;00", "-10;00"),  # Multiplying by negative one
+    ],
+    ids=[
+        "simple",
+        "fractional",
+        "mul-by-negative",
+        "mul-a-negative",
+        "mul-by-zero",
+        "mul-by-one",
+        "mul-by-neg-one",
+    ],
+)
+def test_imul(initial_str, multiplier_str, expected_str):
+    """Tests the in-place multiplication method (*=)."""
+    s = Sexagesimal(initial_str)
+    multiplier = Sexagesimal(multiplier_str)
+
+    # Perform the in-place operation
+    s *= multiplier
+
+    assert s == Sexagesimal(expected_str)
+
+
+@pytest.mark.parametrize(
+    "op, op_symbol",
+    [
+        (operator.iadd, "+="),
+        (operator.isub, "-="),
+        (operator.imul, "*="),
+    ],
+    ids=["iadd", "isub", "imul"],
+)
+def test_inplace_operators_return_new_instance(op, op_symbol):
+    """
+    Tests that the in-place operators return a new object instance,
+    which is the correct behavior for immutable classes.
+    """
+    s = Sexagesimal("10;00")
+    other = Sexagesimal("1;00")
+
+    # Store the memory ID of the original object
+    initial_id = id(s)
+
+    # Perform the "in-place" operation. The `op` function here is equivalent
+    # to writing `s += other`, `s -= other`, etc.
+    s = op(s, other)
+
+    # Store the memory ID of the object after the operation
+    final_id = id(s)
+
+    # For an immutable object, the ID MUST be different.
+    assert initial_id != final_id, f"Object ID should change after {op_symbol}"

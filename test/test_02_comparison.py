@@ -36,4 +36,27 @@ def test_less_than(s1_str, s2_str, expected):
     assert (s1 < s2) == expected
 
 
-# TODO: Add similar parametrized tests for __ge__ and __le__
+@pytest.mark.parametrize(
+    "s1_str, s2_str, expected",
+    [
+        ("1;0", "1;0", True),
+        ("1;1", "1;0", True),
+        ("-0;59", "-1;0", True),
+    ],
+)
+def test_greater_equal(s1_str, s2_str, expected):
+    s1, s2 = Sexagesimal(s1_str), Sexagesimal(s2_str)
+    assert (s1 >= s2) == expected
+
+
+@pytest.mark.parametrize(
+    "s1_str, s2_str, expected",
+    [
+        ("1;0", "1;0", True),
+        ("1;0", "1;1", True),
+        ("-1;0", "-0;59", True),
+    ],
+)
+def test_less_equal(s1_str, s2_str, expected):
+    s1, s2 = Sexagesimal(s1_str), Sexagesimal(s2_str)
+    assert (s1 <= s2) == expected
