@@ -1,10 +1,11 @@
 # Imports
-from typing import List, Tuple, Union
+from typing import Tuple, Union
 from decimal import Decimal, getcontext
 
 from sympy import Rational
 
 from sexagesimal_calculator import conversion
+from sexagesimal_calculator import arithmetic
 
 from sexagesimal_calculator.core import BASE, PART_SEP, VAL_SEP, _SexagesimalParts
 from sexagesimal_calculator.utils import _normalize_parts
@@ -186,46 +187,6 @@ class Sexagesimal:
     def __repr__(self) -> str:
         return f"Sexagesimal('{self!s}')"
 
-    @staticmethod
-    def _pad_parts(
-        parts_A: Tuple[int, ...], parts_B: Tuple[int, ...], pad_left: bool = True
-    ) -> Tuple[Tuple[int, ...], Tuple[int, ...]]:
-        """
-        Pad two sexagesimal-part tuples so they have equal length.
-
-        Summary:
-            Return two new tuples obtained by padding the shorter of the two inputs
-            with zero-valued digits so both tuples share the same length. When
-            pad_left is True zeros are added to the left (most-significant side),
-            which is appropriate for integer-part alignment. When pad_left is False
-            zeros are added to the right (least-significant side), which is
-            appropriate for fractional-part alignment.
-
-        Args:
-            parts_A (Tuple[int, ...]): First sequence of base-60 digits (most-significant first).
-            parts_B (Tuple[int, ...]): Second sequence of base-60 digits (most-significant first).
-            pad_left (bool, optional): If True pad on the left (MSB side). If False pad on the
-                right (LSB side). Defaults to True.
-
-        Returns:
-            Tuple[Tuple[int, ...], Tuple[int, ...]]: A pair (padded_A, padded_B) where both
-            tuples have equal length and original ordering of digits is preserved.
-
-        Notes:
-            - This function does not mutate the input tuples; it returns new tuples.
-            - It is used by arithmetic helpers to align integer and fractional parts
-              prior to digit-wise addition, subtraction and comparison.
-        """
-        max_len = max(len(parts_A), len(parts_B))
-        if pad_left:
-            padded_A = (0,) * (max_len - len(parts_A)) + parts_A
-            padded_B = (0,) * (max_len - len(parts_B)) + parts_B
-        else:
-            padded_A = parts_A + (0,) * (max_len - len(parts_A))
-            padded_B = parts_B + (0,) * (max_len - len(parts_B))
-
-        return padded_A, padded_B
-
     # The Addition of two Sexagesimal Numbers
     def __add__(self, other: "Sexagesimal") -> "Sexagesimal":
         if not isinstance(other, Sexagesimal):
@@ -239,157 +200,10 @@ class Sexagesimal:
             # i.e A + (-B) ==> A - B
             return self - (-other)
 
-        # ---------------------------------------------------------------------------- #
-        #                          Core Arithmetics on Tuples                          #
-        # ---------------------------------------------------------------------------- #
+        # Now both are positive numbers or both are negative numbers
+        normalized_parts = arithmetic.add(self._parts, other._parts)
 
-        # Step 1: Pad fractional parts with zeros to equal length
-        self_frac, other_frac = self._pad_parts(self.fractional_part, other.fractional_part, pad_left=False)
-
-        # Step 2: Add fractional parts with carry
-        frac_result: List[int] = []
-        carry: int = 0
-        for a, b in zip(reversed(self_frac), reversed(other_frac)):
-            total: int = a + b + carry
-            frac_result.insert(0, total % BASE)
-            carry: int = total // BASE
-
-        # Step 3: Pad integer parts with zeros to equal length
-        self_int, other_int = self._pad_parts(self.integer_part, other.integer_part, pad_left=True)
-
-        # Step 4: Add integer parts with carry
-        int_result: List[int] = []
-        for a, b in zip(reversed(self_int), reversed(other_int)):
-            total: int = a + b + carry
-            int_result.insert(0, total % BASE)
-            carry: int = total // BASE
-
-        # Step 5: Handle any remaining carry
-        if carry > 0:
-            # Handle the final carry that extends the integer part
-            # Carry >= 60
-            while carry >= BASE:
-                int_result.insert(0, carry % BASE)
-                carry //= BASE
-            int_result.insert(0, carry)
-
-        # Step 6: Normalize and create new instance
-        normalized_parts = _normalize_parts(int_result, frac_result, self.is_negative)
         return Sexagesimal._from_parts(normalized_parts)
-
-    def _compare_magnitude(self, other: "Sexagesimal") -> int:
-        """
-        Compare the absolute values of two Sexagesimal numbers.
-
-        Summary:
-            Determine which of the two values has the greater magnitude by:
-              1. Comparing the lengths of the integer-part tuples (more digits => larger magnitude).
-              2. If equal length, comparing integer parts lexicographically.
-              3. If integer parts are equal, comparing fractional parts after right-padding them
-                 with zeros to equal length.
-
-        Args:
-            other (Sexagesimal): The Sexagesimal instance to compare against.
-
-        Returns:
-            int:
-                1   if |self| > |other|
-               -1   if |self| < |other|
-                0   if |self| == |other|
-
-        Notes:
-            - Fractional parts are padded on the right (least-significant side) before comparison.
-            - This method compares magnitudes only; callers must handle signs separately.
-        """
-        # Compare integer parts length
-        if len(self.integer_part) != len(other.integer_part):
-            return 1 if len(self.integer_part) > len(other.integer_part) else -1
-
-        # Compare integer parts lexicographically
-        if self.integer_part != other.integer_part:
-            return 1 if self.integer_part > other.integer_part else -1
-
-        # Pad fractional parts with zeros to equal length
-        self_frac, other_frac = self._pad_parts(self.fractional_part, other.fractional_part, pad_left=False)
-
-        if self_frac != other_frac:
-            return 1 if self_frac > other_frac else -1
-
-        return 0  # They are equal
-
-    @staticmethod
-    def _subtract_magnitude(larger_parts: _SexagesimalParts, smaller_parts: _SexagesimalParts) -> _SexagesimalParts:
-        """
-        Subtract the magnitude of two sexagesimal parts (assumes |larger| >= |smaller|).
-
-        Summary:
-            Perform a base-60 digit-wise subtraction of `smaller_parts` from `larger_parts`.
-            The algorithm:
-              - right-pads fractional parts to equal length and subtracts from least-significant
-                fractional digit to most-significant, propagating borrows as needed;
-              - left-pads integer parts to equal length and subtracts with any remaining borrow;
-              - returns a normalized, immutable _SexagesimalParts with a non-negative sign
-                (caller is responsible for assigning the correct sign if needed).
-
-        Args:
-            larger_parts (_SexagesimalParts): Normalized parts representing the minuend; must
-                have magnitude greater than or equal to `smaller_parts`.
-            smaller_parts (_SexagesimalParts): Normalized parts representing the subtrahend.
-
-        Returns:
-            _SexagesimalParts: A normalized, immutable parts container for the difference.
-                The returned `is_negative` is always False (magnitude subtraction only).
-
-        Notes:
-            - Inputs are expected to be normalized (no leading integer zeros or trailing fractional zeros).
-            - Fractional parts are padded on the right (LSB side); integer parts are padded on the left (MSB side).
-            - Borrow propagation may affect multiple fractional and integer places.
-        """
-
-        # Pad fractional parts with zeros to equal length
-        larger_frac, smaller_frac = Sexagesimal._pad_parts(
-            larger_parts.fractional_part, smaller_parts.fractional_part, pad_left=False
-        )
-
-        # List for mutability
-        larger_frac = list(larger_frac)
-        smaller_frac = list(smaller_frac)
-
-        result_frac_list: List[int] = []
-        borrow: int = 0
-
-        # Subtract fractional parts with borrow
-        for a, b in zip(reversed(larger_frac), reversed(smaller_frac)):
-            val = a - b - borrow
-            if val < 0:
-                val += BASE
-                borrow = 1
-            else:
-                borrow = 0
-
-            result_frac_list.insert(0, val)
-
-        # Pad integer parts with zeros to equal length
-        larger_int, smaller_int = Sexagesimal._pad_parts(
-            larger_parts.integer_part, smaller_parts.integer_part, pad_left=True
-        )
-        larger_int = list(larger_int)
-        smaller_int = list(smaller_int)
-
-        result_int_list: List[int] = []
-        # Subtract integer parts with borrow
-        for a, b in zip(reversed(larger_int), reversed(smaller_int)):
-            val = a - b - borrow
-            if val < 0:
-                val += BASE
-                borrow = 1
-            else:
-                borrow = 0
-
-            result_int_list.insert(0, val)
-
-        # Return the normalized parts
-        return _normalize_parts(result_int_list, result_frac_list, False)
 
     # The Subtraction of two Sexagesimal Numbers
     def __sub__(self, other: "Sexagesimal") -> "Sexagesimal":
@@ -409,150 +223,9 @@ class Sexagesimal:
             # i.e (-A) - (-B) ==> B - A
             return (-other) - (-self)
 
-        # Now both are positive numbers
-        comparison: int = self._compare_magnitude(other)
+        normalized_result_parts = arithmetic.subtract(self._parts, other._parts)
 
-        if comparison >= 0:
-            result_parts = Sexagesimal._subtract_magnitude(self._parts, other._parts)
-
-        else:
-            result_parts = Sexagesimal._subtract_magnitude(other._parts, self._parts)
-            # Result will be negative
-            result_parts = _SexagesimalParts(
-                is_negative=True, integer_part=result_parts.integer_part, fractional_part=result_parts.fractional_part
-            )
-
-        return Sexagesimal._from_parts(result_parts)
-
-    @staticmethod
-    def _add_magnitude(a_parts: List[int], b_parts: List[int]) -> List[int]:
-        """
-        Add two sequences of base-60 digits and return the summed digit list.
-
-        Summary:
-            Perform digit-wise addition of two lists representing contiguous base-60
-            digits (most-significant first). The shorter input is left-padded with
-            zeros for alignment, addition proceeds from least-significant to
-            most-significant with carry propagation, and any final carry is expanded
-            into additional high-order digits.
-
-        Args:
-            a_parts (List[int]): First sequence of base-60 digits (MSB first).
-            b_parts (List[int]): Second sequence of base-60 digits (MSB first).
-
-        Returns:
-            List[int]: Resulting sequence of base-60 digits (MSB first). The result
-                may be longer than either input if carries produce new high-order digits.
-
-        Notes:
-            - Inputs are treated immutably; this function builds and returns new lists.
-            - Designed for internal use when adding combined integer+fractional digit arrays.
-        """
-
-        # Ensure both lists are of equal length
-        length_diff = len(a_parts) - len(b_parts)
-        if length_diff > 0:
-            b_parts = [0] * length_diff + b_parts
-        elif length_diff < 0:
-            a_parts = [0] * (-length_diff) + a_parts
-
-        result: List[int] = []
-        carry: int = 0
-
-        for a, b in zip(reversed(a_parts), reversed(b_parts)):
-            total = a + b + carry
-            result.insert(0, total % BASE)
-            carry = total // BASE
-
-        if carry > 0:
-            while carry >= BASE:
-                result.insert(0, carry % BASE)
-                carry //= BASE
-            result.insert(0, carry)
-
-        return result
-
-    @staticmethod
-    def _multiply_parts(a_parts: _SexagesimalParts, b_parts: _SexagesimalParts) -> _SexagesimalParts:
-        """
-        Multiply two normalized sexagesimal parts using long multiplication.
-
-        Summary:
-            Perform long multiplication treating the concatenated integer+fractional
-            digit sequences of each operand as contiguous base-60 digits (MSB first).
-            - Combine integer and fractional parts into full digit arrays.
-            - Multiply a_full by each digit of b_full (right-to-left), producing
-              intermediate products with appropriate shifts.
-            - Accumulate intermediate products using _add_magnitude.
-            - Re-split the accumulated result into integer and fractional parts
-              according to the total fractional place count.
-            - Normalize the result and set the sign to the XOR of the input signs.
-
-        Args:
-            a_parts (_SexagesimalParts): Normalized parts of multiplicand.
-            b_parts (_SexagesimalParts): Normalized parts of multiplier.
-
-        Returns:
-            _SexagesimalParts: Normalized parts for the product. Fractional length
-            equals sum of input fractional lengths; returned parts are normalized
-            (no extraneous leading/trailing zeros) and is_negative reflects the
-            XOR of the input signs.
-
-        Notes:
-            - Inputs are expected normalized (no leading integer zeros, no trailing fractional zeros).
-            - Uses BASE (60) arithmetic and the helper _add_magnitude for accumulation.
-            - Intermediate carries may increase the length of the result; final
-              normalization ensures canonical representation.
-        """
-
-        # Step 1: Combine integer and fractional parts into single lists
-        a_full = list(a_parts.integer_part) + list(a_parts.fractional_part)
-        b_full = list(b_parts.integer_part) + list(b_parts.fractional_part)
-
-        # Step 2: Total number of fractional places in the result
-        total_frac_places = len(a_parts.fractional_part) + len(b_parts.fractional_part)
-
-        # ------------------------ Perform Long Multiplication ----------------------- #
-        # We will accumulate results of multiplying `a_full` by each digit of `b_full`
-        result_full = []
-
-        # Step 3: Iteratre over each digit in b_full from right to left
-        for idx, b_digit in enumerate(reversed(b_full)):
-            intermediate_product: List[int] = []
-            carry: int = 0
-
-            # Step 3a: Multiply a_full by the current digit of b_full
-            for a_digit in reversed(a_full):
-                product = a_digit * b_digit + carry
-                intermediate_product.insert(0, product % BASE)
-                carry = product // BASE
-
-            # Step 3b: Handle any remaining carry
-            if carry > 0:
-                while carry >= BASE:
-                    intermediate_product.insert(0, carry % BASE)
-                    carry //= BASE
-                intermediate_product.insert(0, carry)
-
-            # Step 3c: Shift the intermediate product according to its position
-            # This is equivalent to multiplying by BASE**idx
-            # We can achieve this by appending `idx` zeros at the end
-            shifted_intermediate_product: List[int] = intermediate_product + [0] * idx
-
-            # Step 3d: Add the shifted intermediate product to our running total
-            result_full = Sexagesimal._add_magnitude(result_full, shifted_intermediate_product)
-
-        # Step 4: Split the result into integer and fractional parts
-        if total_frac_places > 0:
-            int_part = result_full[:-total_frac_places] if len(result_full) > total_frac_places else [0]
-            frac_part = result_full[-total_frac_places:]
-
-        else:
-            int_part = result_full
-            frac_part = [0]
-
-        # Step 5: Normalize and return the result parts
-        return _normalize_parts(int_part, frac_part, a_parts.is_negative ^ b_parts.is_negative)
+        return Sexagesimal._from_parts(normalized_result_parts)
 
     # The Multiplication of two Sexagesimal Numbers
     def __mul__(self, other: "Sexagesimal") -> "Sexagesimal":
@@ -560,7 +233,7 @@ class Sexagesimal:
             return NotImplemented
 
         # Use the Multiplication Algorithm
-        return Sexagesimal._from_parts(Sexagesimal._multiply_parts(self._parts, other._parts))
+        return Sexagesimal._from_parts(arithmetic._multiply_parts(self._parts, other._parts))
 
     # The Division of two Sexagesimal Numbers
     def __truediv__(self, other: "Sexagesimal") -> "Sexagesimal":
@@ -688,7 +361,7 @@ class Sexagesimal:
             return -self < -other  # <==> self > other
 
         # Now both are positive numbers
-        comparison: int = self._compare_magnitude(other)
+        comparison: int = arithmetic._compare_magnitude(self._parts, other._parts)
         return comparison > 0
 
     # Less Than
@@ -706,7 +379,7 @@ class Sexagesimal:
             return -self > -other  # <==> self > other
 
         # Now both are positive numbers
-        comparison: int = self._compare_magnitude(other)
+        comparison: int = arithmetic._compare_magnitude(self._parts, other._parts)
         return comparison < 0
 
     # Equal To
