@@ -8,7 +8,6 @@ from sexagesimal_calculator import conversion
 from sexagesimal_calculator import arithmetic
 
 from sexagesimal_calculator.core import BASE, PART_SEP, VAL_SEP, _SexagesimalParts
-from sexagesimal_calculator.utils import _normalize_parts
 from sexagesimal_calculator.exceptions import InvalidFormatError
 
 
@@ -106,7 +105,7 @@ class Sexagesimal:
             raise InvalidFormatError(f"Fraction Part has a value greater than {BASE}")
 
         # Step 5: Normalize the parts (remove leading/trailing zeros) and create a frozen dataclass
-        self._parts = _normalize_parts(integer_parts, fractional_parts, is_negative)
+        self._parts = arithmetic.normalize_parts(integer_parts, fractional_parts, is_negative)
 
     @classmethod
     def _from_parts(cls, parts: _SexagesimalParts) -> "Sexagesimal":
@@ -233,7 +232,7 @@ class Sexagesimal:
             return NotImplemented
 
         # Use the Multiplication Algorithm
-        return Sexagesimal._from_parts(arithmetic._multiply_parts(self._parts, other._parts))
+        return Sexagesimal._from_parts(arithmetic.multiply_parts(self._parts, other._parts))
 
     # The Division of two Sexagesimal Numbers
     def __truediv__(self, other: "Sexagesimal") -> "Sexagesimal":
@@ -245,14 +244,14 @@ class Sexagesimal:
             raise ZeroDivisionError("Division by zero is not allowed.")
 
         # Step 2: Convert both numbers to Rational
-        self_rational: Rational = conversion._to_rational(self)
-        other_rational: Rational = conversion._to_rational(other)
+        self_rational: Rational = conversion.to_rational(self)
+        other_rational: Rational = conversion.to_rational(other)
 
         # Step 3: Perform division in Rational
         result_rational: Rational = self_rational / other_rational  # type: ignore
 
         # Step 4: Convert the result back to (normalized) Sexagesimal parts
-        result_parts: _SexagesimalParts = conversion._rational_to_sexagesimal_parts(result_rational)
+        result_parts: _SexagesimalParts = conversion.rational_to_sexagesimal_parts(result_rational)
 
         return Sexagesimal._from_parts(result_parts)
 
@@ -361,7 +360,7 @@ class Sexagesimal:
             return -self < -other  # <==> self > other
 
         # Now both are positive numbers
-        comparison: int = arithmetic._compare_magnitude(self._parts, other._parts)
+        comparison: int = arithmetic.compare_magnitude(self._parts, other._parts)
         return comparison > 0
 
     # Less Than
@@ -379,7 +378,7 @@ class Sexagesimal:
             return -self > -other  # <==> self > other
 
         # Now both are positive numbers
-        comparison: int = arithmetic._compare_magnitude(self._parts, other._parts)
+        comparison: int = arithmetic.compare_magnitude(self._parts, other._parts)
         return comparison < 0
 
     # Equal To
@@ -499,7 +498,7 @@ class Sexagesimal:
 
         if not round_up:
             # No rounding up needed
-            new_parts = _normalize_parts(list(self.integer_part), new_frac_list, self.is_negative)
+            new_parts = arithmetic.normalize_parts(list(self.integer_part), new_frac_list, self.is_negative)
             return Sexagesimal._from_parts(new_parts)
 
         # ------------------------- Handling the rounding up ------------------------- #
@@ -538,430 +537,5 @@ class Sexagesimal:
                 else:
                     new_int_list.insert(0, carry)
 
-        new_parts = _normalize_parts(new_int_list, new_frac_list, self.is_negative)
+        new_parts = arithmetic.normalize_parts(new_int_list, new_frac_list, self.is_negative)
         return Sexagesimal._from_parts(new_parts)
-
-    # Convert the given Sexagesimal Number from Mod 60 (default form) to Mod N. Output is a string
-    @staticmethod
-    def mod60ToMod(Input: "Sexagesimal", mod: int) -> str:
-        try:
-            A = Input.S
-        except AttributeError:  # if Input is not a Sexagesimal Object
-            print("Not a Sexagesimal Object")
-            return
-
-        A_D, A_F = A.split(";")
-        A_D = A_D.split(",")
-
-        New_A_D = []
-        for i in range(len(A_D)):
-            elem = A_D[-(i + 1)]
-            New_A_D.append(int(elem) * (60**i))
-
-        N = sum(New_A_D)
-        D = N % mod
-
-        return f"{D};{A_F}"
-
-    # Multipling the two sexagesimal numbers
-    @staticmethod
-    def Multiplication(
-        A: Union["Sexagesimal", str],
-        B: Union["Sexagesimal", str],
-        verbose: bool = False,
-    ):
-        # Get A and B as right form of Sexagesimal string
-        try:
-            A_S = A.S
-            B_S = B.S
-        except AttributeError:  # If Input is just a string
-            A = Sexagesimal(A)
-            B = Sexagesimal(B)
-            A_S = A.S
-            B_S = B.S
-
-        # Break down both numbers in their Integral and Fractional Part
-        A_D, A_F = A_S.split(";")
-        A_D = A_D.split(",")
-        A_F = A_F.split(",")
-        B_D, B_F = B_S.split(";")
-        B_D = B_D.split(",")
-        B_F = B_F.split(",")
-
-        # Print the above details
-        Details = "\n\n\n\n**Inputs:**"
-        Details += f"\n\n\tA\t=\t{A}"
-        Details += f"\n\tB\t=\t{B}"
-
-        Details += (
-            "\n\n\n\n**Step 1:** Break the Sexagesimal Numbers in their Intergral and Fractional Parts respectively."
-        )
-        Details += f"\n\n\tIntegral part of A\t\t=\t{A_D}"
-        Details += f"\n\tFractional part of A\t=\t{A_F}"
-        Details += f"\n\n\tIntegral part of B\t\t=\t{B_D}"
-        Details += f"\n\tFractional part of B\t=\t{B_F}"
-
-        # A List to store all the intermediate Multiplication Results
-        Multiplication = []
-
-        # Multiply the Fractional part of B with A:
-        Details += "\n\n\n\n**Step 2:** Multiply the fractional part of B to A, one Sexagesimal place at a time.\n"
-        for f in B_F[::-1]:
-            carry = 0
-            f = int(f)
-            i = len(Multiplication)
-
-            if i == 0:
-                Multiplication.append([])
-            else:
-                Multiplication.append([0 for _ in range(i)])
-
-            for A_f in A_F[::-1]:
-                carry_old = carry
-                A_f = int(A_f)
-                prod = f * A_f + carry
-
-                if prod > 59:
-                    carry = prod // 60
-                    prod %= 60
-                else:
-                    carry = 0
-
-                Multiplication[i] = [prod] + Multiplication[i]
-                Details += f"\n\t{f:0>2}  *  {A_f:0>2}  +  {carry_old:0>2}\t=\t{60 * carry + prod:0>2}\t=\t60 * {carry:0>2} + {prod:0>2}"
-
-            for A_d in A_D[::-1]:
-                carry_old = carry
-                A_d = int(A_d)
-                prod = f * A_d + carry
-
-                if prod > 59:
-                    carry = prod // 60
-                    prod %= 60
-                else:
-                    carry = 0
-
-                Multiplication[i] = [prod] + Multiplication[i]
-                Details += f"\n\t{f:0>2}  *  {A_d:0>2}  +  {carry_old:0>2}\t=\t{60 * carry + prod:0>2}\t=\t60 * {carry:0>2} + {prod:0>2}"
-
-            if carry > 0:
-                while carry > 59:
-                    R = carry % 60
-                    carry = carry // 60
-                    Multiplication[i] = [R] + Multiplication[i]
-                Multiplication[i] = [carry] + Multiplication[i]
-
-            Details += f"\n\n\t{f}  *  {A}\t=\t{Multiplication[i]}\n"
-
-        # Multiply the Integral part of B with A:
-        Details += "\n\n\n\n**Step 3:** Multiply the integral part of B to A, one Sexagesimal place at a time.\n"
-        for d in B_D[::-1]:
-            d = int(d)
-            carry = 0
-            i = len(Multiplication)
-
-            if i == 0:
-                Multiplication.append([])
-            else:
-                Multiplication.append(i * [0])
-
-            for A_f in A_F[::-1]:
-                carry_old = carry
-                A_f = int(A_f)
-                prod = d * A_f + carry
-
-                if prod > 59:
-                    carry = prod // 60
-                    prod %= 60
-                else:
-                    carry = 0
-
-                Multiplication[i] = [prod] + Multiplication[i]
-                Details += f"\n\t{d:0>2}  *  {A_f:0>2}  +  {carry_old:0>2}\t=\t{60 * carry + prod:0>2}\t=\t60 * {carry:0>2} + {prod:0>2}"
-
-            for A_d in A_D[::-1]:
-                carry_old = carry
-                A_d = int(A_d)
-                prod = d * A_d + carry
-
-                if prod > 59:
-                    carry = prod // 60
-                    prod %= 60
-                else:
-                    carry = 0
-
-                Multiplication[i] = [prod] + Multiplication[i]
-                Details += f"\n\t{d:0>2}  *  {A_d:0>2}  +  {carry_old:0>2}\t=\t{60 * carry + prod:0>2}\t=\t60 * {carry:0>2} + {prod:0>2}"
-
-            if carry > 0:
-                while carry > 59:
-                    R = carry % 60
-                    carry = carry // 60
-                    Multiplication[i] = [R] + Multiplication[i]
-                Multiplication[i] = [carry] + Multiplication[i]
-
-            Details += f"\n\n\t{d}  *  {A}\t=\t{Multiplication[i]}\n"
-
-        # Step 4: Make all the rows of equal length
-        Details += "\n\n\n\n**Step 4:** Make all the rows of equal lenght to get the following matrix of all the intermediate results\n"
-        max_lenght = max([len(x) for x in Multiplication])
-        for i in range(len(Multiplication)):
-            m = max_lenght - len(Multiplication[i])
-
-            Multiplication[i] = m * [0] + Multiplication[i]
-
-        for row in Multiplication:
-            Row = []
-            for elem in row:
-                Row.append(f"{elem:0>2}")
-
-            Row = " | ".join(Row)
-            Details += f"\n\t | {Row} |"
-
-        # Step 5: Add all the rows, column by column, from right to left
-        Details += "\n\n\n\n**Step 5:** Add all the rows, column by column, from right to left. Following is the final result of addition\n"
-        Result = []
-        carry = 0
-        for i in list(range(len(Multiplication[0])))[::-1]:
-            elems = []
-            for j in range(len(Multiplication)):
-                elems.append(Multiplication[j][i])
-            Sum = sum(elems) + carry
-
-            if Sum > 59:
-                carry = Sum // 60
-                Sum %= 60
-            else:
-                carry = 0
-
-            Result = [f"{Sum:0>2}"] + Result
-
-        if carry > 0:
-            while carry > 59:
-                R = carry % 60
-                carry = carry // 60
-                Result = [f"{R:0>2}"] + Result
-            Result = [f"{carry:0>2}"] + Result
-
-        for row in Multiplication:
-            Row = []
-            i = len(Result) - len(row)
-            row = ["00"] * i + row
-            for elem in row:
-                Row.append(f"{elem:0>2}")
-            Row = " | ".join(Row)
-            Details += f"\n\t | {Row} | "
-
-        Details += f"\n\t{'=' * (len(Row) + 6)}"
-        Row = []
-        for elem in Result:
-            Row.append(f"{elem:0>2}")
-        Row = " | ".join(Row)
-        Details += f"\n\t | {Row} | "
-
-        # Step 6: Divide the result into the Integral and the Fractional Part (Using the length of A_F and B_F)
-        Details += "\n\n\n\n**Step 6:** Divide the result into the Integral and the Fractional Part (Using the length of A_F and B_F)\n"
-
-        k = len(A_F) + len(B_F)
-        D, F = Result[:-k], Result[-k:]
-        D = ",".join(D)
-        F = ",".join(F)
-        Details += f"\n     Result  =  {D};{F}"
-
-        # Step 7: Strip the trailing or preceeding zeros from the result, if any
-        Details += "\n\n\n\n**Step 7:** Strip the trailing or preceeding zeros from the result, if any"
-        while F[-3:] == ",00":
-            F = F[:-3]
-
-        while D[:3] == "00,":
-            D = D[3:]
-
-        Details += f"\n\n       Result  =  {D};{F}"
-
-        # Step 8: Give proper sign to the Result
-        Details += "\n\n\n\n**Step 8:** Give proper sign to the Result"
-        if (A.negative is True and B.negative is False) or (A.negative is False and B.negative is True):
-            Details += f"\n\n\t{A}  *  {B}  =  -{D};{F}\n\n"
-            # return (Sexagesimal(f"-{D};{F}"), Details)
-            result = Sexagesimal(f"-{D};{F}")
-        else:
-            Details += f"\n\n\t{A}  *  {B}  =  {D};{F}\n\n"
-            # return (Sexagesimal(f"{D};{F}"), Details)
-            result = Sexagesimal(f"{D};{F}")
-
-        if verbose:
-            return (result, Details)
-        else:
-            return result
-
-    # Division of two Sexagesimal Numbers
-    @staticmethod
-    def Division(
-        A: Union["Sexagesimal", str],
-        B: Union["Sexagesimal", str],
-        precision: int = 20,
-        verbose: bool = False,
-    ):
-        # Get A and B as right form of Sexagesimal string
-        try:
-            A.S
-            B.S
-        except AttributeError:  # If A or B is not a Sexagesimal object
-            A = Sexagesimal(A)
-            B = Sexagesimal(B)
-
-        # Print the above details
-        Details = "\n\n\n\n**Inputs:**"
-        Details += f"\n\n\tA\t=\t{A}"
-        Details += f"\n\tB\t=\t{B}"
-
-        # Step1 : Get the Rational Form of B
-        try:
-            B_Num, B_Denom = str(Sexagesimal.getRationlForm(B)).split("/")
-        except ValueError:  # Not enough values to unpack
-            B_Num = str(Sexagesimal.getRationlForm(B))
-            B_Denom = 1
-
-        Details += "\n\n\nStep 1: Get the rational form of B"
-        Details += f"\n\tB\t=\t {B_Num}"
-        Details += f"\t \t \t{'-' * (len(B_Num) + 2)}"
-        Details += f"\t \t \t {B_Denom}"
-
-        # Step 2: Get Reciprocal of the B_Num
-        B_Num_R, Recur, flag = Sexagesimal.getReciprocal(int(B_Num), precision + 10)
-        B_Num_R1 = Sexagesimal(B_Num_R)
-
-        Details += "\n\n\nStep 2: Get the reciprocal of the numberator of B (Why? Because, dividing by B is same as multiplying by reciprocal of B)"
-        if flag:
-            Details += "\n\tThe numerator of B is not a regular number (i.e has a prime factor other than 2, 3 or 5)."
-            Details += "\tHence, the reciprocal of numberator is non-terminating but recurring! (The recurring term is enclosed on brackets)"
-        else:
-            Details += "\n\tThe numerator of B is a regular number. Hence, the reciprocal has an exact Sexagesimal Representation"
-
-        if len(Recur) == 0:
-            if len(B_Num_R.split(";")[1].split(",")) > precision:
-                B_Num_R = Sexagesimal.RoundOff(B_Num_R, precision)
-
-            Details += f"\n\tReciprocal of numerator {B_Num}\t=\t{B_Num_R}"
-        else:
-            Details += f"\n\tReciprocal of numerator {B_Num}\t=\t{Recur}"
-
-        # Step 3: Now we get the Reciprocal of B
-        B_Denom = Sexagesimal(B_Denom)
-        B_R = B_Num_R1 * B_Denom
-
-        Details += "\n\n\nStep 3: Calculate the Reciprocal of B (Denominator x Reciprocal of Numerator)"
-        Details += f"\n\tReciprocal of B (B')\t=\t{B_R}"
-
-        # Step 4: And now we do the actual divison. Which is nothing but multiplication with the reciprocal
-        Div = A * B_R
-        if A.negative and B.negative is False:
-            Div.negative = True
-        elif A.negative is False and B.negative:
-            Div.negative = True
-        else:
-            Div.negative = False
-
-        if len(Div.split(";")[1].split(",")) > precision:
-            Div = Sexagesimal.RoundOff(Div, precision)
-
-        Details += "\n\n\nStpe 4: Do the actual Division (A/B = A * B')"
-        Details += f"\n\tA/B\t=\t{Div}"
-
-        if flag:
-            A_D, A_F = A.split(";")
-            A_D = A_D.split(",")
-            A_F = A_F.split(",")
-
-            A_New = Div * B
-            A_New_D, A_New_F = A_New.split(";")
-            A_New_D = A_New_D.split(",")
-            A_New_F = A_New_F.split(",")
-
-            cnt = 0
-            for i in range(len(A_F)):
-                if A_F[i] != A_New_F[i]:
-                    break
-                else:
-                    cnt += 1
-
-            Details += f"\n\nThe above answer of division (A/B) when again multiplied with B gives A correctly upto {cnt} Sexagesimal places in the fraction part\n"
-            Details += f"\n\tA'\t=\tA/B * B\t=\t{A_New}\n\n"
-
-        if verbose:
-            return (Div, Details)
-        else:
-            return Div
-
-    @staticmethod
-    def IncrementTableGenerator(Inc_Initial, Inc_Increment, Inc_Rows=10, Inc_Mod=60):
-        Inc_Initial = Sexagesimal(Inc_Initial)
-        Inc_Increment = Sexagesimal(Inc_Increment)
-
-        if Inc_Mod < 2:
-            Inc_Mod = 0
-
-        A = Sexagesimal(Inc_Initial)
-        i = 0
-        Inc_output = []
-
-        if A.negative:
-            Inc_output.append(f"-{A.S}")
-        else:
-            Inc_output.append(A.S)
-
-        while i < Inc_Rows:
-            B = Sexagesimal(Inc_Increment)
-            A = A + B
-
-            A_I = Sexagesimal.Integral2Decimal(A)
-            A_D, A_F = A_I.split(";")
-
-            if Inc_Mod == 0:
-                if A.negative is True and A.S != "00;00":
-                    A = Sexagesimal(f"-{A_D};{A_F}")
-                    Inc_output.appned(f"-{Sexagesimal.Integral2Decimal(A)}")
-
-                else:
-                    A = Sexagesimal(f"{A_D};{A_F}")
-                    Inc_output.append(f"{Sexagesimal.Integral2Decimal(A)}")
-
-            else:
-                A_D = int(A_D) % Inc_Mod
-
-                if A.negative is True and A.S != "00;00":
-                    A = Sexagesimal(f"-{A_D};{A_F}")
-                    if Inc_Mod > 60:
-                        Inc_output.append(f"-{Sexagesimal.Integral2Decimal(A)}")
-                    else:
-                        Inc_output.append(f"-{A.S}")
-                else:
-                    A = Sexagesimal(f"{A_D};{A_F}")
-                    if Inc_Mod > 60:
-                        Inc_output.append(f"{Sexagesimal.Integral2Decimal(A)}")
-                    else:
-                        Inc_output.append(f"{A.S}")
-            i += 1
-
-        return Inc_output
-
-    @staticmethod
-    def IntegralModN(A, N):
-        A = Sexagesimal(A)
-        A_D, A_F = A.split(";")
-        A_D = A_D.split(",")[::-1]
-
-        D = 0
-        for i, d in enumerate(A_D):
-            D += int(d) * (60**i)
-
-        M = int(D)
-        D = []
-        while M > N - 1:
-            R = M % N
-            M = M // N
-            D = [f"{R:0>2}"] + D
-        D = [f"{M:0>2}"] + D
-
-        A_D = ",".join(D)
-        return Sexagesimal(f"{A_D};{A_F}")
