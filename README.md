@@ -8,6 +8,8 @@
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![GitHub stars](https://img.shields.io/github/stars/HrushikeshPawar/sexagesimal-calculator?style=social)
 ![GitHub issues](https://img.shields.io/github/issues/HrushikeshPawar/sexagesimal-calculator)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 A robust, modern Python library for high-precision sexagesimal (base-60) arithmetic, born from a project for the [History of Mathematics in India (HoMI)](https://sites.iitgn.ac.in/homi/) initiative at [Indian Institute of Technology, Gandhinagar](https://iitgn.ac.in/).
 
