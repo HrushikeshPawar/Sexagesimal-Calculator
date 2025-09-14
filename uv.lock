@@ -366,7 +366,7 @@ wheels = [
 
 [[package]]
 name = "sexagesimal-calculator"
-version = "1.2.1"
+version = "2.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "rich" },
