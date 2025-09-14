@@ -248,7 +248,7 @@ def multiply_parts(a_parts: _SexagesimalParts, b_parts: _SexagesimalParts) -> _S
     # We will accumulate results of multiplying `a_full` by each digit of `b_full`
     result_full = []
 
-    # Step 3: Iteratre over each digit in b_full from right to left
+    # Step 3: Iterate over each digit in b_full from right to left
     for idx, b_digit in enumerate(reversed(b_full)):
         intermediate_product: List[int] = []
         carry: int = 0
@@ -356,16 +356,28 @@ def add(a_parts: _SexagesimalParts, b_parts: _SexagesimalParts) -> _SexagesimalP
 
 def subtract(a_parts: _SexagesimalParts, b_parts: _SexagesimalParts) -> _SexagesimalParts:
     """
-    subtract _summary_
+    Subtract two normalized sexagesimal parts (compute a_parts - b_parts).
 
-    _extended_summary_
+    Summary:
+        Perform sign-aware subtraction of two normalized _SexagesimalParts.
+        The function compares magnitudes and delegates to subtract_magnitude
+        to compute the absolute-difference. The returned parts carry the
+        appropriate sign:
+          - If |a_parts| >= |b_parts| the result has the same sign as a_parts (usually non-negative).
+          - If |a_parts| <  |b_parts| the result is the negation of the magnitude difference.
 
     Args:
-        a_parts (_SexagesimalParts): _description_
-        b_parts (_SexagesimalParts): _description_
+        a_parts (_SexagesimalParts): Minuend parts (normalized: no leading integer zeros or trailing fractional zeros).
+        b_parts (_SexagesimalParts): Subtrahend parts (same normalization expectation).
 
     Returns:
-        _SexagesimalParts: _description_
+        _SexagesimalParts: A normalized, immutable parts container representing a_parts - b_parts.
+            The is_negative flag reflects the correct sign of the result; canonical zero is non-negative.
+
+    Notes:
+        - Inputs are expected to be normalized.
+        - This helper implements subtraction at the parts level; callers handle higher-level sign semantics
+          when necessary. Borrow/propagation is handled by subtract_magnitude.
     """
     # Now both are positive numbers
     comparison: int = compare_magnitude(a_parts, b_parts)
