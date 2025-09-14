@@ -1,6 +1,6 @@
 from sympy import Rational
 from typing import List, TYPE_CHECKING
-from decimal import Decimal, InvalidOperation, getcontext
+from decimal import Decimal, InvalidOperation, localcontext
 
 from sexagesimal_calculator.core import BASE, PART_SEP, VAL_SEP, _SexagesimalParts
 
@@ -80,12 +80,13 @@ def from_decimal_str(value_str: str, accuracy: int = 80) -> str:
         str: A string in the canonical "integer;fractional" format,
             e.g., "01;30".
     """
-    try:
-        # Use Decimal for high precision and to handle scientific notation
-        getcontext().prec = accuracy + 20  # Set precision
-        num = Decimal(value_str)
-    except InvalidOperation:
-        raise ValueError(f"Could not parse '{value_str}' as a decimal number.")
+    with localcontext() as ctx:
+        ctx.prec = accuracy + 20  # Set precision higher than needed to avoid rounding issues
+        try:
+            # Use Decimal for high precision and to handle scientific notation
+            num = Decimal(value_str)
+        except InvalidOperation:
+            raise ValueError(f"Could not parse '{value_str}' as a decimal number.")
 
     # Separate integer and fractional parts of the Decimal
     integer_part = int(num.to_integral_value(rounding="ROUND_DOWN"))

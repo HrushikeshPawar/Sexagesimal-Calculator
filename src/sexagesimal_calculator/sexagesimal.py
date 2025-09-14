@@ -1,6 +1,6 @@
 # Imports
 from typing import Tuple, Union
-from decimal import Decimal, getcontext
+from decimal import Decimal, localcontext
 
 from sympy import Rational
 
@@ -418,7 +418,7 @@ class Sexagesimal:
 
         Args:
             precision (int, optional): Number of significant digits to use in
-                the Decimal context (getcontext().prec). Must be a positive
+                the Decimal context (localcontext().prec). Must be a positive
                 integer. Defaults to 50.
 
         Returns:
@@ -427,7 +427,7 @@ class Sexagesimal:
                 canonical zero is returned as a non-negative Decimal.
 
         Notes:
-            - This function mutates the module Decimal context via getcontext().prec.
+            - This function mutates the module Decimal context via localcontext().prec.
               Callers that rely on a different global Decimal precision should
               restore it after calling this method if necessary.
             - All accumulation uses Decimal arithmetic to avoid floating-point
@@ -435,19 +435,20 @@ class Sexagesimal:
         """
 
         # Set the precision for Decimal operations
-        getcontext().prec = precision
+        with localcontext() as ctx:
+            ctx.prec = precision
 
-        total = Decimal(0)
+            total = Decimal(0)
 
-        # Sum of integer digits
-        for idx, digit in enumerate(reversed(self.integer_part)):
-            total += Decimal(digit) * (Decimal(BASE) ** idx)
+            # Sum of integer digits
+            for idx, digit in enumerate(reversed(self.integer_part)):
+                total += Decimal(digit) * (Decimal(BASE) ** idx)
 
-        # Sum of fractional digits
-        for idx, digit in enumerate(self.fractional_part, start=1):
-            total += Decimal(digit) / (Decimal(BASE) ** idx)
+            # Sum of fractional digits
+            for idx, digit in enumerate(self.fractional_part, start=1):
+                total += Decimal(digit) / (Decimal(BASE) ** idx)
 
-        return -total if self.is_negative else total
+            return -total if self.is_negative else total
 
     # Round off the given Sexagesimal Number to the given precision
     def round(self, precision: int = 0) -> "Sexagesimal":
