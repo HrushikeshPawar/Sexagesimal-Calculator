@@ -1,0 +1,61 @@
+# In .github/workflows/test.yml
+
+# The name of your workflow, which will appear in the "Actions" tab on GitHub.
+name: Run Tests & Report Coverage
+
+# --- Trigger Conditions ---
+# This tells GitHub WHEN to run the workflow.
+on:
+  push:
+    branches: [ main ] # Run on every push to the main branch
+  pull_request:
+    branches: [ main ] # Run on every pull request that targets the main branch
+
+# --- Jobs ---
+# A workflow is made up of one or more jobs that can run in parallel or sequentially.
+jobs:
+  # We'll define a single job called "test".
+  test:
+    # The type of virtual machine to run the job on. 'ubuntu-latest' is the standard.
+    runs-on: ubuntu-latest
+    
+    # --- Matrix Strategy ---
+    # This is a powerful feature that runs the job multiple times for different
+    # configurations. We will test against all Python versions you support.
+    strategy:
+      matrix:
+        python-version: 
+            - "3.10"
+            - "3.11"
+            - "3.12"
+            - "3.13"
+
+    # --- Steps ---
+    # A sequence of tasks that will be executed for each job configuration.
+    steps:
+      # Step 1: Check out your repository code so the workflow can access it.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Install uv, your project's package manager.
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # Step 3: Install your project's dependencies using uv.
+      - name: Install the project
+        run: uv sync --locked --all-extras --dev
+
+      # Step 4: Run your tests with pytest and generate a coverage report.
+      # We generate an XML report because the Coveralls action needs it.
+      - name: Run tests with pytest and generate coverage report
+        run: uv run pytest --cov=src/sexagesimal_calculator --cov-report=xml
+
+      # Step 6: Upload the coverage report to Coveralls.io.
+      - name: Upload coverage to Coveralls
+        uses: coverallsapp/github-action@v2
+        with:
+          # This token is automatically provided by GitHub. You don't need to create it.
+          # It allows the action to securely communicate with Coveralls.
+          github-token: ${{ secrets.GITHUB_TOKEN }}
