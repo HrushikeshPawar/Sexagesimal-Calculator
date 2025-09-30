@@ -1,0 +1,2976 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../api/">
+      
+      
+        <link rel="next" href="../about/">
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.19">
+    
+    
+      
+        <title>Internal Modules - Sexagesimal Calculator</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.7e37652d.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#internal-modules" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Sexagesimal Calculator" class="md-header__button md-logo" aria-label="Sexagesimal Calculator" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Sexagesimal Calculator
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Internal Modules
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/HrushikeshPawar/Sexagesimal-Calculator" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    HrushikeshPawar/Sexagesimal-Calculator
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../guide/installation/" class="md-tabs__link">
+          
+  
+  
+  User Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../api/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  API Reference
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+  Developer Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../about/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  About
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Sexagesimal Calculator" class="md-nav__button md-logo" aria-label="Sexagesimal Calculator" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Sexagesimal Calculator
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/HrushikeshPawar/Sexagesimal-Calculator" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.0.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path fill="currentColor" d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    HrushikeshPawar/Sexagesimal-Calculator
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    User Guide
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            User Guide
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Installation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/basic-usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Basic Usage
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/arithmetic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Arithmetic Operations
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/conversions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Conversions & Rounding
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/explanations/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Educational Explanations
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/utilities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Utilities
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    API Reference
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Developer Guide
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            Developer Guide
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Internal Modules
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Internal Modules
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#arithmetic-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      arithmetic Module
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.arithmetic" class="md-nav__link">
+    <span class="md-ellipsis">
+      arithmetic
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="arithmetic">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.arithmetic.pad_parts" class="md-nav__link">
+    <span class="md-ellipsis">
+      pad_parts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.arithmetic.compare_magnitude" class="md-nav__link">
+    <span class="md-ellipsis">
+      compare_magnitude
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.arithmetic.subtract_magnitude" class="md-nav__link">
+    <span class="md-ellipsis">
+      subtract_magnitude
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.arithmetic.add_magnitude" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_magnitude
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.arithmetic.multiply_parts" class="md-nav__link">
+    <span class="md-ellipsis">
+      multiply_parts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.arithmetic.add" class="md-nav__link">
+    <span class="md-ellipsis">
+      add
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.arithmetic.subtract" class="md-nav__link">
+    <span class="md-ellipsis">
+      subtract
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conversion-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      conversion Module
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.conversion" class="md-nav__link">
+    <span class="md-ellipsis">
+      conversion
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="conversion">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.conversion.normalize_parts" class="md-nav__link">
+    <span class="md-ellipsis">
+      normalize_parts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.conversion.from_decimal_str" class="md-nav__link">
+    <span class="md-ellipsis">
+      from_decimal_str
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.conversion.to_rational" class="md-nav__link">
+    <span class="md-ellipsis">
+      to_rational
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.conversion.rational_to_sexagesimal_parts" class="md-nav__link">
+    <span class="md-ellipsis">
+      rational_to_sexagesimal_parts
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      core Module
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.core" class="md-nav__link">
+    <span class="md-ellipsis">
+      core
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="core">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.core.SexagesimalParts" class="md-nav__link">
+    <span class="md-ellipsis">
+      SexagesimalParts
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#utils-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      utils Module
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.utils" class="md-nav__link">
+    <span class="md-ellipsis">
+      utils
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="utils">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.utils.increment_table" class="md-nav__link">
+    <span class="md-ellipsis">
+      increment_table
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../about/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    About
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#arithmetic-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      arithmetic Module
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.arithmetic" class="md-nav__link">
+    <span class="md-ellipsis">
+      arithmetic
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="arithmetic">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.arithmetic.pad_parts" class="md-nav__link">
+    <span class="md-ellipsis">
+      pad_parts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.arithmetic.compare_magnitude" class="md-nav__link">
+    <span class="md-ellipsis">
+      compare_magnitude
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.arithmetic.subtract_magnitude" class="md-nav__link">
+    <span class="md-ellipsis">
+      subtract_magnitude
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.arithmetic.add_magnitude" class="md-nav__link">
+    <span class="md-ellipsis">
+      add_magnitude
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.arithmetic.multiply_parts" class="md-nav__link">
+    <span class="md-ellipsis">
+      multiply_parts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.arithmetic.add" class="md-nav__link">
+    <span class="md-ellipsis">
+      add
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.arithmetic.subtract" class="md-nav__link">
+    <span class="md-ellipsis">
+      subtract
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conversion-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      conversion Module
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.conversion" class="md-nav__link">
+    <span class="md-ellipsis">
+      conversion
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="conversion">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.conversion.normalize_parts" class="md-nav__link">
+    <span class="md-ellipsis">
+      normalize_parts
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.conversion.from_decimal_str" class="md-nav__link">
+    <span class="md-ellipsis">
+      from_decimal_str
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.conversion.to_rational" class="md-nav__link">
+    <span class="md-ellipsis">
+      to_rational
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.conversion.rational_to_sexagesimal_parts" class="md-nav__link">
+    <span class="md-ellipsis">
+      rational_to_sexagesimal_parts
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#core-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      core Module
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.core" class="md-nav__link">
+    <span class="md-ellipsis">
+      core
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="core">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.core.SexagesimalParts" class="md-nav__link">
+    <span class="md-ellipsis">
+      SexagesimalParts
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#utils-module" class="md-nav__link">
+    <span class="md-ellipsis">
+      utils Module
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.utils" class="md-nav__link">
+    <span class="md-ellipsis">
+      utils
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="utils">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#sexagesimal_calculator.utils.increment_table" class="md-nav__link">
+    <span class="md-ellipsis">
+      increment_table
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="internal-modules">Internal Modules</h1>
+<p>This section of the documentation provides a detailed look at the internal helper modules used by the <code>Sexagesimal</code> class. This is primarily intended for contributors or those interested in the low-level implementation of the library.</p>
+<hr />
+<h2 id="arithmetic-module"><code>arithmetic</code> Module</h2>
+<p>This module contains the pure functions for performing base-60 arithmetic on normalized <code>SexagesimalParts</code>.</p>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="sexagesimal_calculator.arithmetic" class="doc doc-heading">
+            <span class="doc doc-object-name doc-module-name">sexagesimal_calculator.arithmetic</span>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="sexagesimal_calculator.arithmetic.pad_parts" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">pad_parts</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">pad_parts</span><span class="p">(</span>
+    <span class="n">parts_A</span><span class="p">:</span> <span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+    <span class="n">parts_B</span><span class="p">:</span> <span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+    <span class="n">pad_left</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Pad two sexagesimal-part tuples so they have equal length.</p>
+
+
+<details class="summary" open>
+  <summary>Summary</summary>
+  <p>Return two new tuples obtained by padding the shorter of the two inputs
+with zero-valued digits so both tuples share the same length. When
+pad_left is True zeros are added to the left (most-significant side),
+which is appropriate for integer-part alignment. When pad_left is False
+zeros are added to the right (least-significant side), which is
+appropriate for fractional-part alignment.</p>
+</details>
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>parts_A</code>
+            </td>
+            <td>
+                  <code><span title="typing.Tuple">Tuple</span>[<span title="int">int</span>, ...]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>First sequence of base-60 digits (most-significant first).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>parts_B</code>
+            </td>
+            <td>
+                  <code><span title="typing.Tuple">Tuple</span>[<span title="int">int</span>, ...]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Second sequence of base-60 digits (most-significant first).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>pad_left</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If True pad on the left (MSB side). If False pad on the
+right (LSB side). Defaults to True.</p>
+              </div>
+            </td>
+            <td>
+                  <code>True</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Tuple">Tuple</span>[<span title="int">int</span>, ...]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Tuple[Tuple[int, ...], Tuple[int, ...]]: A pair (padded_A, padded_B) where both</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Tuple">Tuple</span>[<span title="int">int</span>, ...]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>tuples have equal length and original ordering of digits is preserved.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="notes" open>
+  <summary>Notes</summary>
+  <ul>
+<li>This function does not mutate the input tuples; it returns new tuples.</li>
+<li>It is used by arithmetic helpers to align integer and fractional parts
+    prior to digit-wise addition, subtraction and comparison.</li>
+</ul>
+</details>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="sexagesimal_calculator.arithmetic.compare_magnitude" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">compare_magnitude</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">compare_magnitude</span><span class="p">(</span>
+    <span class="n">parts_a</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></span><span class="p">,</span> <span class="n">parts_b</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="int">int</span></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Compare the magnitudes (absolute values) of two sexagesimal parts.</p>
+
+
+<details class="summary" open>
+  <summary>Summary</summary>
+  <p>Determine which of two normalized SexagesimalParts has the greater magnitude
+by performing the following checks in order:
+  1. Compare the lengths of the integer-part tuples (more digits =&gt; larger magnitude).
+  2. If lengths are equal, compare integer parts lexicographically.
+  3. If integer parts are equal, right-pad fractional parts with zeros to equal
+     length and compare them lexicographically.</p>
+</details>
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>parts_a</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>First normalized parts to compare.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>parts_b</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Second normalized parts to compare.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>int</code></td>            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>1   if |parts_a| &gt; |parts_b|
+-1   if |parts_a| &lt; |parts_b|
+ 0   if |parts_a| == |parts_b|</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="notes" open>
+  <summary>Notes</summary>
+  <ul>
+<li>Inputs are expected to be normalized (no leading integer zeros or trailing fractional zeros).</li>
+<li>Fractional parts are padded on the right (least-significant side) before comparison.</li>
+<li>This function compares magnitude only; sign handling is the caller's responsibility.</li>
+</ul>
+</details>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="sexagesimal_calculator.arithmetic.subtract_magnitude" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">subtract_magnitude</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">subtract_magnitude</span><span class="p">(</span>
+    <span class="n">larger_parts</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></span><span class="p">,</span>
+    <span class="n">smaller_parts</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Subtract the magnitude of two sexagesimal parts (assumes |larger| &gt;= |smaller|).</p>
+
+
+<details class="summary" open>
+  <summary>Summary</summary>
+  <p>Perform a base-60 digit-wise subtraction of <code>smaller_parts</code> from <code>larger_parts</code>.
+The algorithm:
+    - right-pads fractional parts to equal length and subtracts from least-significant
+    fractional digit to most-significant, propagating borrows as needed;
+    - left-pads integer parts to equal length and subtracts with any remaining borrow;
+    - returns a normalized, immutable SexagesimalParts with a non-negative sign
+    (caller is responsible for assigning the correct sign if needed).</p>
+</details>
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>larger_parts</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Normalized parts representing the minuend; must
+have magnitude greater than or equal to <code>smaller_parts</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>smaller_parts</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Normalized parts representing the subtrahend.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>SexagesimalParts</code></td>            <td>
+                  <code><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A normalized, immutable parts container for the difference.
+The returned <code>is_negative</code> is always False (magnitude subtraction only).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="notes" open>
+  <summary>Notes</summary>
+  <ul>
+<li>Inputs are expected to be normalized (no leading integer zeros or trailing fractional zeros).</li>
+<li>Fractional parts are padded on the right (LSB side); integer parts are padded on the left (MSB side).</li>
+<li>Borrow propagation may affect multiple fractional and integer places.</li>
+</ul>
+</details>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="sexagesimal_calculator.arithmetic.add_magnitude" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">add_magnitude</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">add_magnitude</span><span class="p">(</span>
+    <span class="n">a_parts</span><span class="p">:</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">],</span> <span class="n">b_parts</span><span class="p">:</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Add two sequences of base-60 digits and return the summed digit list.</p>
+
+
+<details class="summary" open>
+  <summary>Summary</summary>
+  <p>Perform digit-wise addition of two lists representing contiguous base-60
+digits (most-significant first). The shorter input is left-padded with
+zeros for alignment, addition proceeds from least-significant to
+most-significant with carry propagation, and any final carry is expanded
+into additional high-order digits.</p>
+</details>
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>a_parts</code>
+            </td>
+            <td>
+                  <code><span title="typing.List">List</span>[<span title="int">int</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>First sequence of base-60 digits (MSB first).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>b_parts</code>
+            </td>
+            <td>
+                  <code><span title="typing.List">List</span>[<span title="int">int</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Second sequence of base-60 digits (MSB first).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.List">List</span>[<span title="int">int</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List[int]: Resulting sequence of base-60 digits (MSB first). The result
+may be longer than either input if carries produce new high-order digits.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="notes" open>
+  <summary>Notes</summary>
+  <ul>
+<li>Inputs are treated immutably; this function builds and returns new lists.</li>
+<li>Designed for internal use when adding combined integer+fractional digit arrays.</li>
+</ul>
+</details>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="sexagesimal_calculator.arithmetic.multiply_parts" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">multiply_parts</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">multiply_parts</span><span class="p">(</span>
+    <span class="n">a_parts</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></span><span class="p">,</span> <span class="n">b_parts</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Multiply two normalized sexagesimal parts using long multiplication.</p>
+
+
+<details class="summary" open>
+  <summary>Summary</summary>
+  <p>Perform long multiplication treating the concatenated integer+fractional
+digit sequences of each operand as contiguous base-60 digits (MSB first).
+- Combine integer and fractional parts into full digit arrays.
+- Multiply a_full by each digit of b_full (right-to-left), producing
+    intermediate products with appropriate shifts.
+- Accumulate intermediate products using add_magnitude.
+- Re-split the accumulated result into integer and fractional parts
+    according to the total fractional place count.
+- Normalize the result and set the sign to the XOR of the input signs.</p>
+</details>
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>a_parts</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Normalized parts of multiplicand.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>b_parts</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Normalized parts of multiplier.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>SexagesimalParts</code></td>            <td>
+                  <code><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Normalized parts for the product. Fractional length</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+<td></td>            <td>
+                  <code><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>equals sum of input fractional lengths; returned parts are normalized</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+<td></td>            <td>
+                  <code><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>(no extraneous leading/trailing zeros) and is_negative reflects the</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+<td></td>            <td>
+                  <code><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>XOR of the input signs.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="notes" open>
+  <summary>Notes</summary>
+  <ul>
+<li>Inputs are expected normalized (no leading integer zeros, no trailing fractional zeros).</li>
+<li>Uses BASE (60) arithmetic and the helper add_magnitude for accumulation.</li>
+<li>Intermediate carries may increase the length of the result; final
+    normalization ensures canonical representation.</li>
+</ul>
+</details>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="sexagesimal_calculator.arithmetic.add" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">add</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">add</span><span class="p">(</span>
+    <span class="n">a_parts</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></span><span class="p">,</span> <span class="n">b_parts</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Add two normalized sexagesimal parts (magnitude addition in base-60).</p>
+
+
+<details class="summary" open>
+  <summary>Summary</summary>
+  <p>Compute the sum of two normalized SexagesimalParts by aligning their
+fractional and integer digit sequences, performing digit-wise addition
+in base BASE (60), and propagating carries from the least-significant
+fractional place up through integer places. Any final carry that
+extends the integer part is expanded into additional high-order digits.
+The returned parts are normalized and immutable.</p>
+</details>
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>a_parts</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Left addend; expected to be normalized
+(no extraneous leading integer zeros or trailing fractional zeros,
+except canonical zero).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>b_parts</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Right addend; same normalization expectation
+as <code>a_parts</code>.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>SexagesimalParts</code></td>            <td>
+                  <code><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A normalized, immutable parts container representing</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+<td></td>            <td>
+                  <code><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>the sum. The returned <code>is_negative</code> flag is set to a_parts.is_negative</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+<td></td>            <td>
+                  <code><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>(this function performs magnitude addition; callers should arrange sign</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+<td></td>            <td>
+                  <code><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>semantics before calling).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="notes" open>
+  <summary>Notes</summary>
+  <ul>
+<li>Fractional parts are padded on the right (LSB side) for alignment.</li>
+<li>Integer parts are padded on the left (MSB side) for alignment.</li>
+<li>Inputs are treated immutably; this function builds and returns new lists.</li>
+<li>This helper implements magnitude addition; sign-aware addition (mixing
+  positives and negatives) is handled by the higher-level API.</li>
+</ul>
+</details>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="sexagesimal_calculator.arithmetic.subtract" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">subtract</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">subtract</span><span class="p">(</span>
+    <span class="n">a_parts</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></span><span class="p">,</span> <span class="n">b_parts</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Subtract two normalized sexagesimal parts (compute a_parts - b_parts).</p>
+
+
+<details class="summary" open>
+  <summary>Summary</summary>
+  <p>Perform sign-aware subtraction of two normalized SexagesimalParts.
+The function compares magnitudes and delegates to subtract_magnitude
+to compute the absolute-difference. The returned parts carry the
+appropriate sign:
+  - If |a_parts| &gt;= |b_parts| the result has the same sign as a_parts (usually non-negative).
+  - If |a_parts| &lt;  |b_parts| the result is the negation of the magnitude difference.</p>
+</details>
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>a_parts</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Minuend parts (normalized: no leading integer zeros or trailing fractional zeros).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>b_parts</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Subtrahend parts (same normalization expectation).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>SexagesimalParts</code></td>            <td>
+                  <code><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A normalized, immutable parts container representing a_parts - b_parts.
+The is_negative flag reflects the correct sign of the result; canonical zero is non-negative.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="notes" open>
+  <summary>Notes</summary>
+  <ul>
+<li>Inputs are expected to be normalized.</li>
+<li>This helper implements subtraction at the parts level; callers handle higher-level sign semantics
+  when necessary. Borrow/propagation is handled by subtract_magnitude.</li>
+</ul>
+</details>
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><hr />
+<h2 id="conversion-module"><code>conversion</code> Module</h2>
+<p>This module contains the pure functions for converting between sexagesimal representations and other numerical types like <code>Decimal</code> and <code>Rational</code>.</p>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="sexagesimal_calculator.conversion" class="doc doc-heading">
+            <span class="doc doc-object-name doc-module-name">sexagesimal_calculator.conversion</span>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="sexagesimal_calculator.conversion.normalize_parts" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">normalize_parts</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">normalize_parts</span><span class="p">(</span>
+    <span class="n">integer_parts</span><span class="p">:</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">],</span>
+    <span class="n">fractional_parts</span><span class="p">:</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">],</span>
+    <span class="n">is_negative</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Normalize integer and fractional sexagesimal digit lists into a canonical parts container.</p>
+
+
+<details class="summary" open>
+  <summary>Summary</summary>
+  <p>Cleans up the provided integer and fractional digit lists so they represent a
+canonical, immutable sexagesimal value. This includes:
+    - removing extraneous leading zeros from the integer part,
+    - removing extraneous trailing zeros from the fractional part,
+    - ensuring a canonical representation for zero (integer_part=(0,), fractional_part=(0,)),
+    - preserving the sign except that zero is always non-negative.</p>
+</details>
+
+<details class="notes" open>
+  <summary>Notes</summary>
+  <ul>
+<li>The function returns a frozen SexagesimalParts dataclass suitable for storage
+    on Sexagesimal instances.</li>
+<li>The implementation operates in-place on the provided lists (it mutates the
+    lists by popping). Callers who need to keep their originals should pass copies.</li>
+<li>The canonical fractional part is always non-empty; if all fractional digits are
+    stripped, it becomes [0].</li>
+</ul>
+</details>
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>integer_parts</code>
+            </td>
+            <td>
+                  <code><span title="typing.List">List</span>[<span title="int">int</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List of integer-place base-60 digits (most-significant first).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>fractional_parts</code>
+            </td>
+            <td>
+                  <code><span title="typing.List">List</span>[<span title="int">int</span>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>List of fractional-place base-60 digits (most-significant first).</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>is_negative</code>
+            </td>
+            <td>
+                  <code><span title="bool">bool</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Sign flag; will be cleared for the canonical zero representation.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>SexagesimalParts</code></td>            <td>
+                  <code><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Immutable, normalized parts with fields:
+- is_negative (bool)
+- integer_part (Tuple[int, ...])
+- fractional_part (Tuple[int, ...])</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="sexagesimal_calculator.conversion.from_decimal_str" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">from_decimal_str</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">from_decimal_str</span><span class="p">(</span><span class="n">value_str</span><span class="p">:</span> <span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="n">accuracy</span><span class="p">:</span> <span class="n"><span title="int">int</span></span> <span class="o">=</span> <span class="mi">80</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="str">str</span></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Converts a decimal number string into a sexagesimal string.</p>
+<p>This method is designed to be robust and can handle standard decimal
+notation ("1.5") as well as scientific notation ("1.5e-2").</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>value_str</code>
+            </td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The string representation of the decimal number.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>accuracy</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The number of fractional places to compute.</p>
+              </div>
+            </td>
+            <td>
+                  <code>80</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>str</code></td>            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A string in the canonical "integer;fractional" format,
+e.g., "01;30".</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="sexagesimal_calculator.conversion.to_rational" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">to_rational</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">to_rational</span><span class="p">(</span><span class="n">sexagesimal</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" title="sexagesimal_calculator.sexagesimal.Sexagesimal" href="../api/#sexagesimal_calculator.sexagesimal.Sexagesimal">Sexagesimal</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="sympy.Rational">Rational</span></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Convert the internal sexagesimal representation to an exact sympy.Rational.</p>
+
+
+<details class="summary" open>
+  <summary>Summary</summary>
+  <p>Build an exact Rational by summing the integer-place digits weighted by
+BASE<strong>k (k = 0,1,2,...) and the fractional-place digits as digit/BASE</strong>k
+(k = 1,2,...). The sign of the result matches the instance sign; zero is
+returned as a non-negative Rational.</p>
+</details>
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>sexagesimal</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="sexagesimal_calculator.sexagesimal.Sexagesimal" href="../api/#sexagesimal_calculator.sexagesimal.Sexagesimal">Sexagesimal</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The Sexagesimal instance to convert.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>Rational</code></td>            <td>
+                  <code><span title="sympy.Rational">Rational</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Exact rational value equivalent to this sexagesimal number.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="notes" open>
+  <summary>Notes</summary>
+  <ul>
+<li>Uses sympy.Rational for exact fractional arithmetic.</li>
+<li>Integer and fractional contributions are accumulated separately.</li>
+<li>The implementation preserves exactness (no floating-point rounding).</li>
+</ul>
+</details>
+
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="sexagesimal_calculator.conversion.rational_to_sexagesimal_parts" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">rational_to_sexagesimal_parts</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">rational_to_sexagesimal_parts</span><span class="p">(</span>
+    <span class="n">num</span><span class="p">:</span> <span class="n"><span title="sympy.Rational">Rational</span></span><span class="p">,</span> <span class="n">max_frac_places</span><span class="p">:</span> <span class="n"><span title="int">int</span></span> <span class="o">=</span> <span class="mi">80</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Convert a sympy.Rational to normalized sexagesimal parts.</p>
+
+
+<details class="summary" open>
+  <summary>Summary</summary>
+  <p>Produce a canonical SexagesimalParts representation for the given exact
+Rational <code>num</code>. The function extracts the integer portion as base-60
+digits and generates up to <code>max_frac_places</code> fractional base-60 digits
+by repeatedly multiplying the fractional remainder by BASE. The result
+is normalized (no extraneous leading integer zeros or trailing
+fractional zeros) and preserves the sign of the input; zero is returned
+using the canonical non-negative representation.</p>
+</details>
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>num</code>
+            </td>
+            <td>
+                  <code><span title="sympy.Rational">Rational</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Exact rational value to convert.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>max_frac_places</code>
+            </td>
+            <td>
+                  <code><span title="int">int</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Maximum number of fractional base-60
+digits to produce. Conversion stops early if the fractional part
+terminates. Defaults to 80.</p>
+              </div>
+            </td>
+            <td>
+                  <code>80</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+<th>Name</th>          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+<td><code>SexagesimalParts</code></td>            <td>
+                  <code><a class="autorefs autorefs-internal" title="SexagesimalParts
+
+
+  
+      dataclass
+   (sexagesimal_calculator.core.SexagesimalParts)" href="#sexagesimal_calculator.core.SexagesimalParts">SexagesimalParts</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Immutable, normalized parts with fields:
+- is_negative (bool)
+- integer_part (Tuple[int, ...])
+- fractional_part (Tuple[int, ...])</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+<details class="notes" open>
+  <summary>Notes</summary>
+  <ul>
+<li>Uses exact Rational arithmetic; no floating-point rounding is used.</li>
+<li>If the sexagesimal expansion is non-terminating the result is a
+    truncated expansion of at most <code>max_frac_places</code> digits.</li>
+<li>Callers may increase <code>max_frac_places</code> to reduce truncation error.</li>
+</ul>
+</details>
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div><hr />
+<h2 id="core-module"><code>core</code> Module</h2>
+<p>This module contains the foundational data structures and constants for the library.</p>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="sexagesimal_calculator.core" class="doc doc-heading">
+            <span class="doc doc-object-name doc-module-name">sexagesimal_calculator.core</span>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h3 id="sexagesimal_calculator.core.SexagesimalParts" class="doc doc-heading">
+            <span class="doc doc-object-name doc-class-name">SexagesimalParts</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+
+        <p>An immutable, private container for the normalized components of a
+sexagesimal number.</p>
+<p>Using frozen=True makes instances immutable and hashable.
+Using slots=True optimizes memory usage and attribute access speed.</p>
+
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+  </div>
+
+    </div>
+
+</div><hr />
+<h2 id="utils-module"><code>utils</code> Module</h2>
+<p>This module contains public utility functions that use the <code>Sexagesimal</code> class.</p>
+
+
+<div class="doc doc-object doc-module">
+
+
+
+<h2 id="sexagesimal_calculator.utils" class="doc doc-heading">
+            <span class="doc doc-object-name doc-module-name">sexagesimal_calculator.utils</span>
+
+
+</h2>
+
+    <div class="doc doc-contents first">
+
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="sexagesimal_calculator.utils.increment_table" class="doc doc-heading">
+            <span class="doc doc-object-name doc-function-name">increment_table</span>
+
+
+</h3>
+<div class="doc-signature highlight"><pre><span></span><code><span class="nf">increment_table</span><span class="p">(</span>
+    <span class="n">initial</span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="n"><span title="int">int</span></span><span class="p">,</span> <span class="n"><span title="float">float</span></span><span class="p">],</span>
+    <span class="n">increment</span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="n"><span title="int">int</span></span><span class="p">,</span> <span class="n"><span title="float">float</span></span><span class="p">],</span>
+    <span class="n">rows</span><span class="p">:</span> <span class="n"><span title="int">int</span></span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+    <span class="n">mod</span><span class="p">:</span> <span class="n"><span title="int">int</span></span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Generates a table of incrementing sexagesimal values.</p>
+
+
+    </div>
+
+</div>
+
+
+
+  </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "..", "features": ["content.code.annotate", "navigation.tabs"], "search": "../assets/javascripts/workers/search.973d3a69.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.92b07e13.min.js"></script>
+      
+    
+  </body>
+</html>
