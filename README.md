@@ -15,6 +15,12 @@ A robust, modern Python library for high-precision sexagesimal (base-60) arithme
 
 This library provides a `Sexagesimal` class that represents numbers as immutable objects, allowing for intuitive and accurate calculations. It is ideal for applications in historical mathematics, astronomy, and any domain requiring base-60 computation.
 
+---
+
+**[Full Documentation](https://hrushikeshpawar.github.io/Sexagesimal-Calculator/)** | **[PyPI Project](https://pypi.org/project/sexagesimal-calculator/)** | **[Source Code](https://github.com/HrushikeshPawar/Sexagesimal-Calculator)**
+
+---
+
 ## Features
 
 -   **Immutable Objects:** `Sexagesimal` numbers are immutable, ensuring predictable and bug-free calculations.
