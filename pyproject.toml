@@ -1,6 +1,6 @@
 [project]
 name = "sexagesimal-calculator"
-version = "2.0.0"
+version = "2.0.1"
 description = "Performing calculations in Sexagesimal Coordinate System."
 readme = "README.md"
 authors = [
@@ -28,6 +28,12 @@ dependencies = [
     "rich>=14.1.0",
     "sympy>=1.14.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/HrushikeshPawar/Sexagesimal-Calculator"
+Documentation = "https://hrushikeshpawar.github.io/Sexagesimal-Calculator/"
+Repository = "https://github.com/HrushikeshPawar/Sexagesimal-Calculator"
+"Issue Tracker" = "https://github.com/HrushikeshPawar/Sexagesimal-Calculator/issues"
 
 [project.scripts]
 sexagesimal-calculator = "sexagesimal_calculator:main"
