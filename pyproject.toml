@@ -29,6 +29,12 @@ dependencies = [
     "sympy>=1.14.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/HrushikeshPawar/Sexagesimal-Calculator"
+Documentation = "https://hrushikeshpawar.github.io/Sexagesimal-Calculator/"
+Repository = "https://github.com/HrushikeshPawar/Sexagesimal-Calculator"
+"Issue Tracker" = "https://github.com/HrushikeshPawar/Sexagesimal-Calculator/issues"
+
 [project.scripts]
 sexagesimal-calculator = "sexagesimal_calculator:main"
 
